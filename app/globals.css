@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design Tokens ─────────────────────────────────────── */
+:root {
+  /* Primary accent — Apple system blue */
+  --accent: #007AFF;
+  --accent-deep: #0051D5;
+
+  /* Surfaces */
+  --bg-base: #FAFAF7;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F5F5F2;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-card: rgba(0, 0, 0, 0.08);
+
+  /* Text */
+  --text-primary: #1C1C1E;
+  --text-secondary: #6B7280;
+  --text-tertiary: #9CA3AF;
+
+  /* Semantic */
+  --accent-overdue: #FF3B30;
+  --accent-success: #34C759;
+  --accent-warning: #FF9500;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
+
+  /* Frosted glass */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+}
+
+.dark {
+  --accent: #0A84FF;
+  --accent-deep: #409CFF;
+
+  --bg-base: #1C1C1E;
+  --bg-card: #2C2C2E;
+  --bg-card-hover: #3A3A3C;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.10);
+
+  --text-primary: #F2F2F7;
+  --text-secondary: #98989D;
+  --text-tertiary: #636366;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.20), 0 4px 12px rgba(0, 0, 0, 0.20);
+
+  --glass-bg: rgba(28, 28, 30, 0.72);
+}
+
+/* ─── Base ───────────────────────────────────────────────── */
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* ─── Typography Scale ───────────────────────────────────── */
+@layer components {
+  .type-display {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--text-primary);
+  }
+
+  .type-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--text-primary);
+  }
+
+  .type-section {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 0em;
+    color: var(--text-primary);
+  }
+
+  .type-body {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 0em;
+    line-height: 1.5;
+    color: var(--text-primary);
+  }
+
+  .type-small {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    color: var(--text-secondary);
+  }
+
+  .type-caption {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+}
+
+/* ─── Focus Ring ─────────────────────────────────────────── */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.25);
+  border-radius: 6px;
+}
+
+.dark *:focus-visible {
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35);
+}
+
+/* ─── Frosted Glass ──────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+/* ─── Card ───────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ─── Skeleton loader ────────────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-card-hover) 25%,
+    var(--bg-card) 50%,
+    var(--bg-card-hover) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+  border-radius: 6px;
+}
