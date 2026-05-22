@@ -1,5 +1,5 @@
 import { Header } from "@/components/dashboard/Header";
-import { DashboardTasks } from "@/components/dashboard/DashboardTasks";
+import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
 import { PurchasesStub } from "@/components/dashboard/PurchasesStub";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -22,12 +22,18 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <div className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-8">
+      <div className="max-w-7xl mx-auto px-8 py-10 flex flex-col gap-6">
         <Header />
-        <DashboardTasks initialTasks={initialTasks} />
-        {/* Today's Goals — hidden until Phase 4 */}
-        <AppointmentsSection />
-        <PurchasesStub />
+        <DashboardLayout
+          initialTasks={initialTasks}
+          right={
+            <>
+              {/* Today's Goals goes here in Phase 4 */}
+              <AppointmentsSection />
+              <PurchasesStub />
+            </>
+          }
+        />
       </div>
     </main>
   );

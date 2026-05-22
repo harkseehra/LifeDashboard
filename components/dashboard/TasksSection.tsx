@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import {
   parseISO,
@@ -104,8 +105,11 @@ export function TasksSection({ tasks, onCompleteTask }: TasksSectionProps) {
   if (total === 0) {
     return (
       <section>
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="type-section">To Do</h2>
+          <Link href="/tasks" className="type-small transition-colors duration-150" style={{ color: "var(--accent)" }}>
+            View all →
+          </Link>
         </div>
         <div className="card px-6 py-8">
           <p className="type-body text-center" style={{ color: "var(--text-secondary)" }}>
@@ -125,14 +129,19 @@ export function TasksSection({ tasks, onCompleteTask }: TasksSectionProps) {
 
   return (
     <section>
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="type-section">To Do</h2>
-        <span
-          className="type-caption px-2 py-0.5 rounded-full"
-          style={{ background: "var(--bg-card-hover)", color: "var(--text-tertiary)" }}
-        >
-          {total}
-        </span>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <h2 className="type-section">To Do</h2>
+          <span
+            className="type-caption px-2 py-0.5 rounded-full"
+            style={{ background: "var(--bg-card-hover)", color: "var(--text-tertiary)" }}
+          >
+            {total}
+          </span>
+        </div>
+        <Link href="/tasks" className="type-small transition-colors duration-150" style={{ color: "var(--accent)" }}>
+          View all →
+        </Link>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
