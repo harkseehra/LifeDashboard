@@ -8,10 +8,11 @@ import type { Task } from "@/lib/types";
 
 interface DashboardLayoutProps {
   initialTasks: Task[];
+  goals: React.ReactNode;
   right: React.ReactNode;
 }
 
-export function DashboardLayout({ initialTasks, right }: DashboardLayoutProps) {
+export function DashboardLayout({ initialTasks, goals, right }: DashboardLayoutProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -59,10 +60,13 @@ export function DashboardLayout({ initialTasks, right }: DashboardLayoutProps) {
 
   return (
     <>
-      {/* Full-width quick capture, pinned under header */}
+      {/* Full-width quick capture */}
       <QuickCapture onAddTask={handleAddTask} />
 
-      {/* 2-column dashboard grid */}
+      {/* Today's Goals — full width, horizontal chip row */}
+      {goals}
+
+      {/* 2-column grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
         <div className="lg:col-span-3">
           <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} />

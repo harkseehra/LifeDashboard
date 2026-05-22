@@ -1,5 +1,6 @@
 import { Header } from "@/components/dashboard/Header";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { GoalsSection } from "@/components/dashboard/GoalsSection";
 import { AppointmentsSection } from "@/components/dashboard/AppointmentsSection";
 import { PurchasesStub } from "@/components/dashboard/PurchasesStub";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
       .order("created_at", { ascending: false });
     initialTasks = (data as Task[]) ?? [];
   } catch {
-    // Supabase not configured yet — render empty state
+    // Supabase not configured yet — empty state renders gracefully
   }
 
   return (
@@ -26,9 +27,9 @@ export default async function DashboardPage() {
         <Header />
         <DashboardLayout
           initialTasks={initialTasks}
+          goals={<GoalsSection />}
           right={
             <>
-              {/* Today's Goals goes here in Phase 4 */}
               <AppointmentsSection />
               <PurchasesStub />
             </>
