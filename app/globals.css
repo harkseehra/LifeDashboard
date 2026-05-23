@@ -158,6 +158,75 @@ body {
   box-shadow: var(--shadow-card);
 }
 
+/* ─── Button Design Tokens ───────────────────────────────────── */
+:root {
+  --radius-btn:    10px;   /* standard action & form buttons  */
+  --radius-chip:   8px;    /* chips, small tags, emoji cells   */
+  --btn-h:         36px;   /* inline action button height      */
+  --btn-h-lg:      42px;   /* modal / form footer button       */
+  --btn-icon-sm:   28px;   /* small icon button (nav, delete)  */
+  --btn-icon-md:   32px;   /* standard icon button             */
+}
+
+@layer components {
+  /* ── Primary filled button ─────────────────────────── */
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
+    height: var(--btn-h); padding: 0 16px;
+    border-radius: var(--radius-btn);
+    background: var(--accent); color: #fff; border: none;
+    cursor: pointer; font-family: inherit; font-size: 13px;
+    font-weight: 500; letter-spacing: -0.01em;
+    transition: background 150ms var(--ease-out), transform 80ms var(--ease-out), opacity 150ms;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-deep); }
+  .btn-primary:active:not(:disabled) { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Secondary / ghost button ──────────────────────── */
+  .btn-secondary {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 6px;
+    height: var(--btn-h); padding: 0 16px;
+    border-radius: var(--radius-btn);
+    background: var(--bg-card-hover); color: var(--text-secondary);
+    border: 1px solid var(--border-card);
+    cursor: pointer; font-family: inherit; font-size: 13px;
+    font-weight: 500; letter-spacing: -0.01em;
+    transition: background 150ms var(--ease-out), transform 80ms var(--ease-out);
+  }
+  .btn-secondary:hover { background: var(--border-subtle); }
+  .btn-secondary:active { transform: scale(0.97); }
+
+  /* Taller variant for modal/form footers */
+  .btn-lg { height: var(--btn-h-lg); padding: 0 20px; font-size: 14px; }
+
+  /* ── Icon-only: with subtle border (nav, close) ────── */
+  .btn-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: var(--btn-icon-md); height: var(--btn-icon-md);
+    border-radius: var(--radius-chip);
+    background: var(--bg-card); border: 1px solid var(--border-card);
+    color: var(--text-secondary); cursor: pointer; flex-shrink: 0;
+    transition: background 150ms var(--ease-out), color 150ms var(--ease-out), transform 80ms var(--ease-out);
+  }
+  .btn-icon:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+  .btn-icon:active { transform: scale(0.93); }
+
+  /* ── Icon-only ghost (inline row actions) ──────────── */
+  .btn-icon-ghost {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: var(--btn-icon-sm); height: var(--btn-icon-sm);
+    border-radius: var(--radius-chip);
+    background: transparent; border: none;
+    color: var(--text-tertiary); cursor: pointer; flex-shrink: 0;
+    transition: color 150ms var(--ease-out), background 150ms var(--ease-out), transform 80ms var(--ease-out);
+  }
+  .btn-icon-ghost:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+  .btn-icon-ghost:active { transform: scale(0.93); }
+}
+
 /* ─── Interactive spring — applied to hoverable elements ─── */
 .spring-hover {
   transition: transform 350ms var(--ease-spring),

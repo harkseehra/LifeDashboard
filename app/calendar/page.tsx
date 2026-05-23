@@ -55,23 +55,11 @@ function MiniCalendar({
           {format(currentMonth, "MMMM yyyy")}
         </span>
         <div className="flex items-center gap-0.5">
-          <button
-            onClick={onPrevMonth}
-            className="flex items-center justify-center w-6 h-6 rounded-full"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", transition: "color 150ms" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-tertiary)")}
-          >
-            <ChevronLeft size={13} />
+          <button onClick={onPrevMonth} className="btn-icon-ghost" style={{ borderRadius: "50%" }} aria-label="Previous month">
+            <ChevronLeft size={14} />
           </button>
-          <button
-            onClick={onNextMonth}
-            className="flex items-center justify-center w-6 h-6 rounded-full"
-            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-tertiary)", transition: "color 150ms" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-tertiary)")}
-          >
-            <ChevronRight size={13} />
+          <button onClick={onNextMonth} className="btn-icon-ghost" style={{ borderRadius: "50%" }} aria-label="Next month">
+            <ChevronRight size={14} />
           </button>
         </div>
       </div>
@@ -214,18 +202,7 @@ function DayTimeline({
             )}
           </h2>
         </div>
-        <button
-          onClick={onAdd}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full type-small spring-hover"
-          style={{
-            background: "var(--accent)",
-            border: "none",
-            color: "#fff",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            flexShrink: 0,
-          }}
-        >
+        <button onClick={onAdd} className="btn-primary" style={{ flexShrink: 0 }}>
           <Plus size={13} />
           Add
         </button>
@@ -324,10 +301,9 @@ function DayTimeline({
                 {/* Delete */}
                 <button
                   onClick={() => onDelete(appt.id)}
-                  className="shrink-0 flex items-center justify-center w-7 h-7 rounded-[6px] self-center"
-                  style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", transition: "color 150ms" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--accent-overdue)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-tertiary)"; }}
+                  className="btn-icon-ghost self-center"
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent-overdue)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-tertiary)"; }}
                   aria-label={`Delete ${appt.title}`}
                 >
                   <Trash2 size={13} />
@@ -408,8 +384,7 @@ function AddAppointmentModal({
       >
         <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <p className="type-section">New Appointment</p>
-          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-full"
-            style={{ background: "var(--bg-card-hover)", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}>
+          <button onClick={onClose} className="btn-icon" style={{ borderRadius: "50%" }}>
             <X size={14} />
           </button>
         </div>
@@ -453,12 +428,10 @@ function AddAppointmentModal({
             style={{ ...fieldStyle, outline: "none" }} onFocus={onFocus} onBlur={onBlurField} />
 
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-[10px] type-small"
-              style={{ background: "var(--bg-card-hover)", border: "none", color: "var(--text-secondary)", cursor: "pointer", fontFamily: "inherit" }}>
+            <button type="button" onClick={onClose} className="btn-secondary btn-lg flex-1">
               Cancel
             </button>
-            <button type="submit" disabled={!title.trim() || adding} className="flex-1 py-2.5 rounded-[10px] type-small"
-              style={{ background: "var(--accent)", border: "none", color: "#fff", cursor: title.trim() && !adding ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: !title.trim() || adding ? 0.6 : 1, transition: "opacity 150ms" }}>
+            <button type="submit" disabled={!title.trim() || adding} className="btn-primary btn-lg flex-1">
               {adding ? "Adding…" : "Add Appointment"}
             </button>
           </div>
@@ -536,8 +509,7 @@ export default function CalendarPage() {
             />
             <button
               onClick={() => setShowAddModal(true)}
-              className="mt-4 w-full flex items-center justify-center gap-1.5 py-2 rounded-[10px] type-small spring-hover"
-              style={{ background: "var(--accent)", border: "none", color: "#fff", cursor: "pointer", fontFamily: "inherit" }}
+              className="btn-primary mt-4 w-full"
             >
               <Plus size={13} />
               New appointment

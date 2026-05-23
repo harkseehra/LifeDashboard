@@ -76,23 +76,8 @@ export function CheckInPopover({
                     : "Start your streak today"}
                 </p>
               </div>
-              <button
-                onClick={onClose}
-                className="p-1 rounded-full transition-colors duration-150"
-                style={{
-                  color: "var(--text-tertiary)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "var(--bg-card-hover)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "none";
-                }}
-              >
-                <X size={16} />
+              <button onClick={onClose} className="btn-icon" style={{ borderRadius: "50%" }}>
+                <X size={15} />
               </button>
             </div>
 
@@ -100,52 +85,22 @@ export function CheckInPopover({
               <>
                 <p className="type-body">Did you do it today?</p>
                 <div className="flex gap-3">
-                  <button
+                  <motion.button
                     onClick={() => setPhase("yes")}
-                    className="flex-1 py-2.5 rounded-[11px] type-body transition-all duration-150"
-                    style={{
-                      background: "var(--accent)",
-                      color: "#fff",
-                      border: "none",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontWeight: 500,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--accent-deep)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "var(--accent)";
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform = "scale(0.98)";
-                    }}
-                    onMouseUp={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
+                    className="btn-primary btn-lg flex-1"
+                    whileTap={{ scale: 0.97 }}
+                    transition={spring}
                   >
                     Yes
-                  </button>
-                  <button
+                  </motion.button>
+                  <motion.button
                     onClick={() => setPhase("no")}
-                    className="flex-1 py-2.5 rounded-[11px] type-body transition-all duration-150"
-                    style={{
-                      background: "var(--bg-card-hover)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--border-card)",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontWeight: 500,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--border-subtle)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "var(--bg-card-hover)";
-                    }}
+                    className="btn-secondary btn-lg flex-1"
+                    whileTap={{ scale: 0.97 }}
+                    transition={spring}
                   >
                     No
-                  </button>
+                  </motion.button>
                 </div>
               </>
             )}
@@ -162,8 +117,9 @@ export function CheckInPopover({
                   }
                   rows={3}
                   autoFocus
-                  className="w-full type-body rounded-[11px] px-4 py-3 resize-none"
+                  className="w-full type-body px-4 py-3 resize-none"
                   style={{
+                    borderRadius: "var(--radius-btn)",
                     background: "var(--bg-card-hover)",
                     border: "1px solid var(--border-card)",
                     color: "var(--text-primary)",
@@ -195,26 +151,14 @@ export function CheckInPopover({
                   >
                     ← Back
                   </button>
-                  <button
+                  <motion.button
                     onClick={handleSave}
-                    className="px-5 py-2 rounded-[11px] type-small transition-all duration-150"
-                    style={{
-                      background: "var(--accent)",
-                      color: "#fff",
-                      border: "none",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontWeight: 500,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--accent-deep)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "var(--accent)";
-                    }}
+                    className="btn-primary"
+                    whileTap={{ scale: 0.97 }}
+                    transition={spring}
                   >
                     Save
-                  </button>
+                  </motion.button>
                 </div>
               </>
             )}
@@ -248,20 +192,14 @@ function CelebrationScreen({
           {tier.message}
         </p>
       </div>
-      <button
+      <motion.button
         onClick={onContinue}
-        className="px-6 py-2.5 rounded-[11px] type-body"
-        style={{
-          background: "var(--accent)",
-          color: "#fff",
-          border: "none",
-          cursor: "pointer",
-          fontFamily: "inherit",
-          fontWeight: 500,
-        }}
+        className="btn-primary btn-lg px-8"
+        whileTap={{ scale: 0.97 }}
+        transition={spring}
       >
         Continue
-      </button>
+      </motion.button>
     </div>
   );
 }

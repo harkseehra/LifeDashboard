@@ -88,16 +88,7 @@ export default function GoalsPage() {
           <h1 className="type-display">Goals</h1>
           <button
             onClick={() => { setShowForm((s) => !s); setFormError(null); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full type-small spring-hover"
-            style={{
-              background: showForm ? "var(--accent)" : "var(--bg-card)",
-              color: showForm ? "#fff" : "var(--text-secondary)",
-              border: `1px solid ${showForm ? "var(--accent)" : "var(--border-card)"}`,
-              boxShadow: "var(--shadow-card)",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              transition: "all 180ms ease",
-            }}
+            className={showForm ? "btn-primary" : "btn-secondary"}
           >
             <Plus size={13} />
             New goal
@@ -202,30 +193,14 @@ export default function GoalsPage() {
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setFormError(null); }}
-                  className="type-small px-4 py-2 rounded-[8px]"
-                  style={{
-                    background: "var(--bg-card-hover)",
-                    border: "none",
-                    color: "var(--text-secondary)",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                  }}
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={adding || !newTitle.trim()}
-                  className="type-small px-4 py-2 rounded-[8px]"
-                  style={{
-                    background: "var(--accent)",
-                    border: "none",
-                    color: "#fff",
-                    cursor: adding ? "not-allowed" : "pointer",
-                    fontFamily: "inherit",
-                    opacity: adding || !newTitle.trim() ? 0.6 : 1,
-                    transition: "opacity 150ms",
-                  }}
+                  className="btn-primary"
                 >
                   {adding ? "Adding…" : "Add goal"}
                 </button>
@@ -298,19 +273,14 @@ export default function GoalsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Link
-                        href={`/goals/${goal.id}`}
-                        className="flex items-center justify-center w-8 h-8 rounded-[6px]"
-                        style={{ color: "var(--text-tertiary)", transition: "color 150ms" }}
-                      >
+                      <Link href={`/goals/${goal.id}`} className="btn-icon-ghost">
                         <ChevronRight size={15} />
                       </Link>
                       <button
                         onClick={() => handleDelete(goal.id)}
-                        className="flex items-center justify-center w-8 h-8 rounded-[6px]"
-                        style={{ background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", transition: "color 150ms" }}
-                        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--accent-overdue)"; }}
-                        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-tertiary)"; }}
+                        className="btn-icon-ghost"
+                        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--accent-overdue)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-tertiary)"; }}
                         aria-label={`Delete ${goal.title}`}
                       >
                         <Trash2 size={13} />
