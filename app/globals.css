@@ -205,3 +205,27 @@ body {
 .animate-slide-up {
   animation: slideUp 500ms var(--ease-spring) both;
 }
+
+/* ─── Mobile responsive ──────────────────────────────────── */
+@media (max-width: 640px) {
+  :root {
+    --page-top: 24px;
+    --page-gutter: 16px;
+  }
+
+  /* Scale display heading down on small phones */
+  .type-display {
+    font-size: clamp(28px, 7vw, 40px);
+  }
+
+  /* Prevent iOS double-tap zoom on buttons */
+  button, a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Ensure minimum 44px tap targets on interactive rows */
+  .tap-row {
+    min-height: 44px;
+  }
+}

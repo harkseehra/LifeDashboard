@@ -122,7 +122,7 @@ export default function GoalsPage() {
                       setSelectedEmoji(e);
                       setCustomEmoji("");
                     }}
-                    className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all duration-100"
+                    className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all duration-150"
                     style={{
                       background:
                         !customEmoji && selectedEmoji === e

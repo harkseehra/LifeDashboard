@@ -111,9 +111,13 @@ export function TasksSection({ tasks, onCompleteTask }: TasksSectionProps) {
             View all →
           </Link>
         </div>
-        <div className="card px-6 py-8">
-          <p className="type-body text-center" style={{ color: "var(--text-secondary)" }}>
+        <div className="card px-6 py-10 flex flex-col items-center gap-2 text-center">
+          <span style={{ fontSize: 22, opacity: 0.35 }}>✓</span>
+          <p className="type-body" style={{ color: "var(--text-secondary)" }}>
             All clear.
+          </p>
+          <p className="type-small" style={{ color: "var(--text-tertiary)" }}>
+            Use the capture bar above to add a task.
           </p>
         </div>
       </section>

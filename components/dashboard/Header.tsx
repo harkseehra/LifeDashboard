@@ -129,7 +129,7 @@ export function Header() {
 
   return (
     <motion.header
-      className="flex items-start justify-between gap-4"
+      className="flex items-start justify-between gap-4 flex-wrap"
       variants={fadeUp}
       initial="hidden"
       animate="visible"
