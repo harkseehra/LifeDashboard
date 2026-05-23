@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
-import { Inter_Tight, Instrument_Serif } from "next/font/google";
+import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
-const interTight = Inter_Tight({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter-tight",
-  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
 });
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
   variable: "--font-instrument-serif",
   weight: ["400"],
-  style: ["normal", "italic"],
+  style: ["normal"],
 });
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${interTight.variable} ${instrumentSerif.variable}`}>
+      <body className={`${inter.variable} ${instrumentSerif.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
