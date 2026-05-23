@@ -6,15 +6,16 @@ import { parseQuickCapture } from "@/lib/parse-quick-capture";
 
 const PLACEHOLDERS = [
   "Add a task…",
-  "Add a task… try /goal or /appt",
   "Add a task… try /appt dentist friday 3pm",
+  "Add a task… try /goal or /appt",
 ];
 
 interface QuickCaptureProps {
   onAddTask?: (title: string, due_date: string | null) => Promise<void>;
+  onAddAppointment?: (title: string, starts_at: string) => Promise<void>;
 }
 
-export function QuickCapture({ onAddTask }: QuickCaptureProps) {
+export function QuickCapture({ onAddTask, onAddAppointment }: QuickCaptureProps) {
   const [value, setValue] = useState("");
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const [focused, setFocused] = useState(false);
@@ -26,7 +27,7 @@ export function QuickCapture({ onAddTask }: QuickCaptureProps) {
   const showFeedback = (msg: string) => {
     if (feedbackTimer.current) clearTimeout(feedbackTimer.current);
     setFeedback(msg);
-    feedbackTimer.current = setTimeout(() => setFeedback(null), 3000);
+    feedbackTimer.current = setTimeout(() => setFeedback(null), 3500);
   };
 
   const handleFocus = () => {
@@ -51,9 +52,17 @@ export function QuickCapture({ onAddTask }: QuickCaptureProps) {
     const parsed = parseQuickCapture(trimmed);
 
     if (parsed.type === "appointment") {
-      showFeedback("Appointments coming in Phase 3 — try adding a task instead.");
+      if (!parsed.starts_at) {
+        showFeedback("Couldn't parse a time — try '/appt dentist friday 3pm'");
+        return;
+      }
+      setSubmitting(true);
+      setValue("");
+      await onAddAppointment?.(parsed.title, parsed.starts_at.toISOString());
+      setSubmitting(false);
       return;
     }
+
     if (parsed.type === "goal") {
       showFeedback("Goals coming in Phase 4 — try adding a task instead.");
       return;

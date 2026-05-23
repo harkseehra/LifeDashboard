@@ -1,37 +1,32 @@
+"use client";
+
 import Link from "next/link";
 import { MapPin } from "lucide-react";
+import { format, isToday, isTomorrow, parseISO } from "date-fns";
+import type { Appointment } from "@/lib/types";
 
-// Mock appointments — replaced with Supabase data in Phase 3
-const MOCK_APPOINTMENTS = [
-  {
-    id: "1",
-    title: "Dentist checkup",
-    location: "123 Elm Street",
-    time: "3:00 PM",
-    dateLabel: "Today",
-    isToday: true,
-  },
-  {
-    id: "2",
-    title: "Team standup",
-    location: null,
-    time: "10:00 AM",
-    dateLabel: "May 25",
-    isToday: false,
-  },
-  {
-    id: "3",
-    title: "Haircut",
-    location: "King & John",
-    time: "2:00 PM",
-    dateLabel: "May 27",
-    isToday: false,
-  },
-];
+interface AppointmentsSectionProps {
+  appointments: Appointment[];
+}
 
-export function AppointmentsSection() {
-  const today = MOCK_APPOINTMENTS.filter((a) => a.isToday);
-  const upcoming = MOCK_APPOINTMENTS.filter((a) => !a.isToday);
+function groupAppointments(appointments: Appointment[]) {
+  const today: Appointment[] = [];
+  const upcoming: Appointment[] = [];
+
+  for (const a of appointments) {
+    const d = parseISO(a.starts_at);
+    if (isToday(d)) {
+      today.push(a);
+    } else {
+      upcoming.push(a);
+    }
+  }
+
+  return { today, upcoming };
+}
+
+export function AppointmentsSection({ appointments }: AppointmentsSectionProps) {
+  const { today, upcoming } = groupAppointments(appointments);
 
   return (
     <section>
@@ -56,6 +51,7 @@ export function AppointmentsSection() {
               <AppointmentRow
                 key={appt.id}
                 appt={appt}
+                isToday
                 showDivider={i < today.length - 1 || upcoming.length > 0}
               />
             ))}
@@ -71,6 +67,7 @@ export function AppointmentsSection() {
               <AppointmentRow
                 key={appt.id}
                 appt={appt}
+                isToday={false}
                 showDivider={i < upcoming.length - 1}
               />
             ))}
@@ -85,7 +82,6 @@ export function AppointmentsSection() {
           </div>
         )}
 
-        {/* Bottom padding */}
         <div style={{ height: 8 }} />
       </div>
     </section>
@@ -94,11 +90,19 @@ export function AppointmentsSection() {
 
 function AppointmentRow({
   appt,
+  isToday: today,
   showDivider,
 }: {
-  appt: (typeof MOCK_APPOINTMENTS)[0];
+  appt: Appointment;
+  isToday: boolean;
   showDivider: boolean;
 }) {
+  const date = parseISO(appt.starts_at);
+  const timeStr = format(date, "h:mm a");
+  const dateLabel = isTomorrow(date)
+    ? "Tomorrow"
+    : format(date, "MMM d");
+
   return (
     <div
       className="flex gap-4 px-5 py-3"
@@ -108,34 +112,31 @@ function AppointmentRow({
     >
       {/* Time column */}
       <div className="shrink-0 pt-0.5" style={{ width: 68 }}>
-        {!appt.isToday && (
-          <div
-            className="type-caption mb-0.5"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            {appt.dateLabel}
+        {!today && (
+          <div className="type-caption mb-0.5" style={{ color: "var(--text-tertiary)" }}>
+            {dateLabel}
           </div>
         )}
         <div
           className="type-small"
           style={{
-            color: appt.isToday ? "var(--accent)" : "var(--text-secondary)",
-            fontWeight: appt.isToday ? 600 : 500,
+            color: today ? "var(--accent)" : "var(--text-secondary)",
+            fontWeight: today ? 600 : 500,
           }}
         >
-          {appt.time}
+          {timeStr}
         </div>
       </div>
 
       {/* Content */}
       <div className="flex flex-col gap-0.5 min-w-0">
-        <span className="type-body">{appt.title}</span>
+        <span className="type-body truncate">{appt.title}</span>
         {appt.location && (
           <span
-            className="type-small flex items-center gap-1"
+            className="type-small flex items-center gap-1 truncate"
             style={{ color: "var(--text-tertiary)" }}
           >
-            <MapPin size={10} />
+            <MapPin size={10} className="shrink-0" />
             {appt.location}
           </span>
         )}

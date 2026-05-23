@@ -4,18 +4,22 @@ import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { QuickCapture } from "./QuickCapture";
 import { TasksSection } from "./TasksSection";
+import { AppointmentsSection } from "./AppointmentsSection";
+import { PurchasesStub } from "./PurchasesStub";
 import { addTask, completeTask } from "@/lib/tasks";
+import { addAppointment } from "@/lib/appointments";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
-import type { Task } from "@/lib/types";
+import type { Task, Appointment } from "@/lib/types";
 
 interface DashboardLayoutProps {
   initialTasks: Task[];
+  initialAppointments: Appointment[];
   goals: React.ReactNode;
-  right: React.ReactNode;
 }
 
-export function DashboardLayout({ initialTasks, goals, right }: DashboardLayoutProps) {
+export function DashboardLayout({ initialTasks, initialAppointments, goals }: DashboardLayoutProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -60,6 +64,31 @@ export function DashboardLayout({ initialTasks, goals, right }: DashboardLayoutP
     }
   };
 
+  const handleAddAppointment = async (title: string, starts_at: string) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: Appointment = {
+      id: tempId,
+      user_id: "",
+      title,
+      starts_at,
+      ends_at: null,
+      location: null,
+      notes: null,
+      created_at: new Date().toISOString(),
+    };
+    setAppointments((prev) =>
+      [...prev, optimistic].sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+    );
+
+    const { data, error } = await addAppointment({ title, starts_at });
+    if (error || !data) {
+      setAppointments((prev) => prev.filter((a) => a.id !== tempId));
+      showToast("Couldn't save the appointment — check your connection.");
+    } else {
+      setAppointments((prev) => prev.map((a) => (a.id === tempId ? data : a)));
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -68,17 +97,14 @@ export function DashboardLayout({ initialTasks, goals, right }: DashboardLayoutP
         initial="hidden"
         animate="visible"
       >
-        {/* Full-width quick capture */}
         <motion.div variants={fadeUp} transition={spring}>
-          <QuickCapture onAddTask={handleAddTask} />
+          <QuickCapture onAddTask={handleAddTask} onAddAppointment={handleAddAppointment} />
         </motion.div>
 
-        {/* Today's Goals — full width, horizontal chip row */}
         <motion.div variants={fadeUp} transition={spring}>
           {goals}
         </motion.div>
 
-        {/* 2-column grid */}
         <motion.div
           className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start"
           variants={fadeUp}
@@ -88,7 +114,8 @@ export function DashboardLayout({ initialTasks, goals, right }: DashboardLayoutP
             <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} />
           </div>
           <div className="lg:col-span-2 flex flex-col gap-6">
-            {right}
+            <AppointmentsSection appointments={appointments} />
+            <PurchasesStub />
           </div>
         </motion.div>
       </motion.div>
