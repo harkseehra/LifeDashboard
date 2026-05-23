@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/Button";
+import { scaleIn, spring } from "@/lib/animations";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -32,11 +34,17 @@ export default function LoginPage() {
 
   return (
     <main
-      className="min-h-screen flex items-center justify-center px-6"
-      style={{ background: "var(--bg-base)" }}
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "var(--bg-base)", padding: "0 var(--page-gutter)" }}
     >
       <div className="w-full max-w-sm">
-        <div className="card px-8 py-10 flex flex-col gap-6">
+        <motion.div
+          className="card px-8 py-10 flex flex-col gap-6"
+          variants={scaleIn}
+          initial="hidden"
+          animate="visible"
+          transition={spring}
+        >
           {sent ? (
             <div className="flex flex-col gap-3 text-center">
               <p className="type-title">Check your email.</p>
@@ -87,7 +95,7 @@ export default function LoginPage() {
               </form>
             </>
           )}
-        </div>
+        </motion.div>
       </div>
     </main>
   );

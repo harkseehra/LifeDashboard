@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GoalChip } from "./GoalChip";
 import { CheckInPopover, type CheckInGoal } from "@/components/modals/CheckInPopover";
+import { fadeUp, spring } from "@/lib/animations";
 
 // Mock goals — replaced with Supabase data in Phase 4
 const MOCK_GOALS: CheckInGoal[] = [
@@ -29,15 +30,22 @@ export function GoalsSection() {
         className="flex gap-3 overflow-x-auto"
         style={{ scrollbarWidth: "none", paddingBottom: 2 }}
       >
-        {MOCK_GOALS.map((goal) => (
-          <GoalChip
+        {MOCK_GOALS.map((goal, i) => (
+          <motion.div
             key={goal.id}
-            goal={goal}
-            checkedIn={checkedIn.has(goal.id)}
-            onClick={() => {
-              if (!checkedIn.has(goal.id)) setActiveGoal(goal);
-            }}
-          />
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            transition={{ ...spring, delay: i * 0.06 }}
+          >
+            <GoalChip
+              goal={goal}
+              checkedIn={checkedIn.has(goal.id)}
+              onClick={() => {
+                if (!checkedIn.has(goal.id)) setActiveGoal(goal);
+              }}
+            />
+          </motion.div>
         ))}
       </div>
 

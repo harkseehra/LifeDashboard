@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { Sun, Moon, Monitor, CloudSun } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { getGreeting } from "@/lib/date-helpers";
+import { fadeUp, spring } from "@/lib/animations";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
@@ -25,7 +27,13 @@ export function Header() {
     theme === "light" ? Sun : theme === "dark" ? Moon : Monitor;
 
   return (
-    <header className="flex items-start justify-between gap-4">
+    <motion.header
+      className="flex items-start justify-between gap-4"
+      variants={fadeUp}
+      initial="hidden"
+      animate="visible"
+      transition={{ ...spring, delay: 0 }}
+    >
       <div>
         <h1 className="type-display">{greeting}, Harkirat</h1>
         <p className="type-small mt-1">{dateStr}</p>
@@ -73,6 +81,6 @@ export function Header() {
           </button>
         )}
       </div>
-    </header>
+    </motion.header>
   );
 }

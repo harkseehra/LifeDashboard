@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { QuickCapture } from "./QuickCapture";
 import { TasksSection } from "./TasksSection";
 import { addTask, completeTask } from "@/lib/tasks";
+import { fadeUp, staggerParent, spring } from "@/lib/animations";
 import type { Task } from "@/lib/types";
 
 interface DashboardLayoutProps {
@@ -60,21 +62,36 @@ export function DashboardLayout({ initialTasks, goals, right }: DashboardLayoutP
 
   return (
     <>
-      {/* Full-width quick capture */}
-      <QuickCapture onAddTask={handleAddTask} />
+      <motion.div
+        className="flex flex-col gap-6"
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Full-width quick capture */}
+        <motion.div variants={fadeUp} transition={spring}>
+          <QuickCapture onAddTask={handleAddTask} />
+        </motion.div>
 
-      {/* Today's Goals — full width, horizontal chip row */}
-      {goals}
+        {/* Today's Goals — full width, horizontal chip row */}
+        <motion.div variants={fadeUp} transition={spring}>
+          {goals}
+        </motion.div>
 
-      {/* 2-column grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-        <div className="lg:col-span-3">
-          <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} />
-        </div>
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          {right}
-        </div>
-      </div>
+        {/* 2-column grid */}
+        <motion.div
+          className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start"
+          variants={fadeUp}
+          transition={spring}
+        >
+          <div className="lg:col-span-3">
+            <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} />
+          </div>
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            {right}
+          </div>
+        </motion.div>
+      </motion.div>
 
       {toast && (
         <div

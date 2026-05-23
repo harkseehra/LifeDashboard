@@ -1,24 +1,34 @@
 "use client";
 
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useTheme } from "@/components/ThemeProvider";
+import { fadeUp, staggerParent, spring } from "@/lib/animations";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <div className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-8">
-        <div className="flex items-center gap-4">
+      <motion.div
+        className="flex flex-col gap-8"
+        style={{ padding: "var(--page-top) var(--page-gutter) 60px", maxWidth: 640, margin: "0 auto" }}
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-4">
           <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
             ← Dashboard
           </Link>
-        </div>
+        </motion.div>
 
-        <h1 className="type-display">Settings</h1>
+        <motion.h1 variants={fadeUp} transition={spring} className="type-display">
+          Settings
+        </motion.h1>
 
         {/* Theme */}
-        <section className="flex flex-col gap-4">
+        <motion.section variants={fadeUp} transition={spring} className="flex flex-col gap-4">
           <h2 className="type-section">Appearance</h2>
           <div className="card px-6 py-5 flex items-center justify-between">
             <div>
@@ -44,10 +54,10 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* Placeholder sections */}
-        <section className="flex flex-col gap-4">
+        <motion.section variants={fadeUp} transition={spring} className="flex flex-col gap-4">
           <h2 className="type-section" style={{ color: "var(--text-tertiary)" }}>
             More settings coming in Phase 5
           </h2>
@@ -56,8 +66,8 @@ export default function SettingsPage() {
               Weather location, goal check-in time, data export, and sign out will live here.
             </p>
           </div>
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </main>
   );
 }

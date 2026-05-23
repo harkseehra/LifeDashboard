@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { parseISO, isPast, isToday, format } from "date-fns";
 import { createClient } from "@/lib/supabase";
 import { completeTask, uncompleteTask } from "@/lib/tasks";
 import { TaskRow } from "@/components/dashboard/TaskRow";
+import { fadeUp, staggerParent, spring } from "@/lib/animations";
 import type { Task } from "@/lib/types";
 
 type Filter = "todo" | "completed" | "overdue" | "all";
@@ -98,20 +100,26 @@ export default function TasksPage() {
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <div className="max-w-2xl mx-auto px-6 py-10 flex flex-col gap-8">
-        <div className="flex items-center gap-4">
+      <motion.div
+        className="flex flex-col gap-8"
+        style={{ padding: "var(--page-top) var(--page-gutter) 60px", maxWidth: 760, margin: "0 auto" }}
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-4">
           <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
             ← Dashboard
           </Link>
-        </div>
+        </motion.div>
 
-        <div className="flex items-center justify-between">
+        <motion.div variants={fadeUp} transition={spring} className="flex items-center justify-between">
           <h1 className="type-display">Tasks</h1>
           <span className="type-small">{tasks.filter((t) => !t.completed).length} remaining</span>
-        </div>
+        </motion.div>
 
         {/* Filter pills */}
-        <div className="flex gap-2 flex-wrap">
+        <motion.div variants={fadeUp} transition={{ ...spring }} className="flex gap-2 flex-wrap">
           {FILTERS.map((f) => (
             <button
               key={f.key}
@@ -153,80 +161,81 @@ export default function TasksPage() {
               </option>
             ))}
           </select>
-        </div>
+        </motion.div>
 
         {/* Task list */}
-        {loading ? (
-          <div className="card px-6 py-8">
-            <div className="flex flex-col gap-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="skeleton h-5 rounded" style={{ width: `${60 + i * 10}%` }} />
-              ))}
+        <motion.div variants={fadeUp} transition={spring}>
+          {loading ? (
+            <div className="card px-6 py-8">
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="skeleton h-5 rounded" style={{ width: `${60 + i * 10}%` }} />
+                ))}
+              </div>
             </div>
-          </div>
-        ) : visible.length === 0 ? (
-          <div className="card px-6 py-8">
-            <p className="type-body text-center" style={{ color: "var(--text-secondary)" }}>
-              {filter === "todo" ? "All clear." :
-               filter === "overdue" ? "Nothing overdue." :
-               filter === "completed" ? "Nothing completed yet." : "No tasks yet."}
-            </p>
-          </div>
-        ) : (
-          <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-            {visible.map((task, i) =>
-              task.completed ? (
-                /* Completed task row — can uncomplete */
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 px-6"
-                  style={{
-                    paddingTop: 13,
-                    paddingBottom: 13,
-                    borderBottom: i < visible.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                    opacity: 0.55,
-                  }}
-                >
-                  <button
-                    onClick={() => handleUncomplete(task.id)}
-                    className="shrink-0 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+          ) : visible.length === 0 ? (
+            <div className="card px-6 py-8">
+              <p className="type-body text-center" style={{ color: "var(--text-secondary)" }}>
+                {filter === "todo" ? "All clear." :
+                 filter === "overdue" ? "Nothing overdue." :
+                 filter === "completed" ? "Nothing completed yet." : "No tasks yet."}
+              </p>
+            </div>
+          ) : (
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              {visible.map((task, i) =>
+                task.completed ? (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 px-6"
                     style={{
-                      background: "var(--accent)",
-                      border: "2px solid var(--accent)",
-                    }}
-                    aria-label={`Undo: ${task.title}`}
-                  >
-                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                      <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                  <span
-                    className="flex-1 type-body"
-                    style={{
-                      textDecoration: "line-through",
-                      color: "var(--text-tertiary)",
+                      paddingTop: 13,
+                      paddingBottom: 13,
+                      borderBottom: i < visible.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                      opacity: 0.55,
                     }}
                   >
-                    {task.title}
-                  </span>
-                  {task.completed_at && (
-                    <span className="type-caption shrink-0" style={{ color: "var(--text-tertiary)" }}>
-                      {format(new Date(task.completed_at), "MMM d")}
+                    <button
+                      onClick={() => handleUncomplete(task.id)}
+                      className="shrink-0 w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                      style={{
+                        background: "var(--accent)",
+                        border: "2px solid var(--accent)",
+                      }}
+                      aria-label={`Undo: ${task.title}`}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                        <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <span
+                      className="flex-1 type-body"
+                      style={{
+                        textDecoration: "line-through",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
+                      {task.title}
                     </span>
-                  )}
-                </div>
-              ) : (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onComplete={handleComplete}
-                  showDivider={i < visible.length - 1}
-                />
-              )
-            )}
-          </div>
-        )}
-      </div>
+                    {task.completed_at && (
+                      <span className="type-caption shrink-0" style={{ color: "var(--text-tertiary)" }}>
+                        {format(new Date(task.completed_at), "MMM d")}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onComplete={handleComplete}
+                    showDivider={i < visible.length - 1}
+                  />
+                )
+              )}
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
     </main>
   );
 }

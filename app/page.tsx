@@ -23,7 +23,12 @@ export default async function DashboardPage() {
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <div className="max-w-7xl mx-auto px-8 py-10 flex flex-col gap-6">
+      <div
+        className="flex flex-col gap-6"
+        style={{
+          padding: "var(--page-top) var(--page-gutter) 60px",
+        }}
+      >
         <Header />
         <DashboardLayout
           initialTasks={initialTasks}
