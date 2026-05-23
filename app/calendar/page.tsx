@@ -36,14 +36,12 @@ export default function CalendarPage() {
     const supabase = createClient();
     const from = startOfWeek(startOfMonth(month));
     const to = endOfWeek(endOfMonth(month));
-
     const { data } = await supabase
       .from("appointments")
       .select("*")
       .gte("starts_at", from.toISOString())
       .lte("starts_at", to.toISOString())
       .order("starts_at");
-
     setAppointments((data as Appointment[]) ?? []);
     setLoading(false);
   }, []);
@@ -67,28 +65,21 @@ export default function CalendarPage() {
     await deleteAppointment(id);
   };
 
-  const goToToday = () => {
-    setCurrentMonth(new Date());
-    setSelectedDay(new Date());
-  };
-
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}>
-        {/* Back link */}
         <div className="mb-8">
           <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
             ← Dashboard
           </Link>
         </div>
 
-        {/* Month header */}
-        <div className="flex items-center justify-between mb-8">
+        {/* Month nav */}
+        <div className="flex items-center justify-between mb-6">
           <h1 className="type-display">{format(currentMonth, "MMMM yyyy")}</h1>
-
           <div className="flex items-center gap-2">
             <button
-              onClick={goToToday}
+              onClick={() => { setCurrentMonth(new Date()); setSelectedDay(new Date()); }}
               className="type-small px-3 py-1.5 rounded-full spring-hover"
               style={{
                 background: "var(--bg-card)",
@@ -101,265 +92,265 @@ export default function CalendarPage() {
             >
               Today
             </button>
-            <button
-              onClick={() => setCurrentMonth((m) => subMonths(m, 1))}
-              className="flex items-center justify-center w-8 h-8 rounded-full spring-hover"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-card)",
-                boxShadow: "var(--shadow-card)",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-              }}
-              aria-label="Previous month"
-            >
-              <ChevronLeft size={15} />
-            </button>
-            <button
-              onClick={() => setCurrentMonth((m) => addMonths(m, 1))}
-              className="flex items-center justify-center w-8 h-8 rounded-full spring-hover"
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-card)",
-                boxShadow: "var(--shadow-card)",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-              }}
-              aria-label="Next month"
-            >
-              <ChevronRight size={15} />
-            </button>
+            {[
+              { fn: () => setCurrentMonth((m) => subMonths(m, 1)), icon: <ChevronLeft size={15} />, label: "Previous" },
+              { fn: () => setCurrentMonth((m) => addMonths(m, 1)), icon: <ChevronRight size={15} />, label: "Next" },
+            ].map(({ fn, icon, label }) => (
+              <button
+                key={label}
+                onClick={fn}
+                className="flex items-center justify-center w-8 h-8 rounded-full spring-hover"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-card)",
+                  boxShadow: "var(--shadow-card)",
+                  color: "var(--text-secondary)",
+                  cursor: "pointer",
+                }}
+                aria-label={label}
+              >
+                {icon}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="flex gap-6 items-start">
-          {/* Calendar grid */}
-          <div className="flex-1 min-w-0">
-            {/* Day-of-week header row */}
-            <div className="grid grid-cols-7 mb-1">
-              {DAY_HEADERS.map((d) => (
-                <div key={d} className="type-caption text-center py-2">
-                  {d}
-                </div>
-              ))}
-            </div>
-
-            {/* Day cells */}
-            <div
-              className="grid grid-cols-7 gap-px"
-              style={{
-                background: "var(--border-subtle)",
-                borderRadius: 14,
-                overflow: "hidden",
-              }}
-            >
-              {days.map((day) => {
-                const dayAppts = apptsByDay(day);
-                const inMonth = isSameMonth(day, currentMonth);
-                const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
-                const todayDay = isToday(day);
-
-                return (
-                  <button
-                    key={day.toISOString()}
-                    onClick={() =>
-                      setSelectedDay((prev) =>
-                        prev && isSameDay(prev, day) ? null : day
-                      )
-                    }
-                    className="flex flex-col gap-1 p-2.5 text-left transition-colors duration-100"
-                    style={{
-                      background: isSelected ? "var(--bg-card-hover)" : "var(--bg-card)",
-                      minHeight: 80,
-                      cursor: "pointer",
-                      border: "none",
-                    }}
-                  >
-                    {/* Day number */}
-                    <span
-                      className="flex items-center justify-center self-start"
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: "50%",
-                        background: todayDay ? "var(--accent)" : "transparent",
-                        color: todayDay
-                          ? "#fff"
-                          : inMonth
-                          ? "var(--text-primary)"
-                          : "var(--text-tertiary)",
-                        fontWeight: todayDay ? 600 : 400,
-                        fontSize: 12,
-                        fontFamily: "inherit",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {format(day, "d")}
-                    </span>
-
-                    {/* Appointment chips */}
-                    <div className="flex flex-col gap-0.5 w-full">
-                      {dayAppts.slice(0, 3).map((a) => (
-                        <div
-                          key={a.id}
-                          className="truncate"
-                          style={{
-                            background: "var(--accent)",
-                            color: "#fff",
-                            borderRadius: 4,
-                            padding: "1px 5px",
-                            fontSize: 10,
-                            fontWeight: 500,
-                            lineHeight: 1.6,
-                            fontFamily: "inherit",
-                          }}
-                        >
-                          {format(parseISO(a.starts_at), "h:mma")} {a.title}
-                        </div>
-                      ))}
-                      {dayAppts.length > 3 && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            color: "var(--text-tertiary)",
-                            fontFamily: "inherit",
-                          }}
-                        >
-                          +{dayAppts.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {loading && (
-              <p
-                className="type-small text-center mt-4"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Loading…
-              </p>
-            )}
+        {/* Calendar card */}
+        <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          {/* Day headers */}
+          <div
+            className="grid grid-cols-7"
+            style={{ borderBottom: "1px solid var(--border-subtle)" }}
+          >
+            {DAY_HEADERS.map((d) => (
+              <div key={d} className="type-caption text-center py-3">
+                {d}
+              </div>
+            ))}
           </div>
 
-          {/* Day detail panel */}
-          <AnimatePresence>
-            {selectedDay && (
-              <motion.div
-                className="card shrink-0"
-                style={{ width: 288, padding: 0, overflow: "hidden" }}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={spring}
-              >
-                {/* Panel header */}
-                <div
-                  className="flex items-center justify-between px-5 py-4"
-                  style={{ borderBottom: "1px solid var(--border-subtle)" }}
-                >
-                  <div>
-                    <p className="type-caption">{format(selectedDay, "EEEE")}</p>
-                    <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em", fontFamily: "inherit" }}>
-                      {format(selectedDay, "MMMM d")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setSelectedDay(null)}
-                    className="flex items-center justify-center w-7 h-7 rounded-full"
-                    style={{
-                      background: "var(--bg-card-hover)",
-                      border: "none",
-                      color: "var(--text-secondary)",
-                      cursor: "pointer",
-                    }}
-                    aria-label="Close"
-                  >
-                    <X size={13} />
-                  </button>
-                </div>
+          {/* Day cells */}
+          <div
+            className="grid grid-cols-7"
+            style={{ borderTop: "none" }}
+          >
+            {days.map((day, idx) => {
+              const dayAppts = apptsByDay(day);
+              const inMonth = isSameMonth(day, currentMonth);
+              const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
+              const todayDay = isToday(day);
+              const col = idx % 7;
 
-                {/* Appointment list */}
-                {selectedDayAppts.length === 0 ? (
-                  <div className="px-5 py-8 text-center">
-                    <p className="type-body" style={{ color: "var(--text-secondary)" }}>
-                      Free day.
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    {selectedDayAppts.map((appt, i) => (
+              return (
+                <button
+                  key={day.toISOString()}
+                  onClick={() =>
+                    setSelectedDay((prev) =>
+                      prev && isSameDay(prev, day) ? null : day
+                    )
+                  }
+                  className="flex flex-col gap-1 p-2 text-left"
+                  style={{
+                    background: isSelected
+                      ? "var(--bg-card-hover)"
+                      : "var(--bg-card)",
+                    minHeight: 88,
+                    cursor: "pointer",
+                    border: "none",
+                    borderTop: "1px solid var(--border-subtle)",
+                    borderRight: col < 6 ? "1px solid var(--border-subtle)" : "none",
+                    transition: "background 120ms",
+                  }}
+                >
+                  <span
+                    className="flex items-center justify-center self-start"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: "50%",
+                      background: todayDay ? "var(--accent)" : "transparent",
+                      color: todayDay
+                        ? "#fff"
+                        : inMonth
+                        ? "var(--text-primary)"
+                        : "var(--text-tertiary)",
+                      fontWeight: todayDay ? 600 : 400,
+                      fontSize: 12,
+                      fontFamily: "inherit",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {format(day, "d")}
+                  </span>
+
+                  <div className="flex flex-col gap-px w-full">
+                    {dayAppts.slice(0, 2).map((a) => (
                       <div
-                        key={appt.id}
-                        className="flex items-start gap-3 px-5 py-4"
+                        key={a.id}
+                        className="truncate"
                         style={{
-                          borderBottom:
-                            i < selectedDayAppts.length - 1
-                              ? "1px solid var(--border-subtle)"
-                              : "none",
+                          background: "var(--accent)",
+                          color: "#fff",
+                          borderRadius: 3,
+                          padding: "1px 4px",
+                          fontSize: 10,
+                          fontWeight: 500,
+                          lineHeight: 1.7,
+                          fontFamily: "inherit",
                         }}
                       >
-                        {/* Time */}
-                        <div className="shrink-0 pt-0.5" style={{ width: 52 }}>
-                          <span
-                            className="type-small"
-                            style={{
-                              color: isToday(selectedDay)
-                                ? "var(--accent)"
-                                : "var(--text-secondary)",
-                              fontWeight: isToday(selectedDay) ? 600 : 400,
-                            }}
-                          >
-                            {format(parseISO(appt.starts_at), "h:mm a")}
-                          </span>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <p className="type-body">{appt.title}</p>
-                          {appt.location && (
-                            <p
-                              className="type-small flex items-center gap-1 mt-0.5"
-                              style={{ color: "var(--text-tertiary)" }}
-                            >
-                              <MapPin size={10} className="shrink-0" />
-                              {appt.location}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDelete(appt.id)}
-                          className="shrink-0 flex items-center justify-center w-6 h-6 rounded"
-                          style={{
-                            background: "transparent",
-                            border: "none",
-                            color: "var(--text-tertiary)",
-                            cursor: "pointer",
-                          }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.color =
-                              "var(--accent-overdue)";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLButtonElement).style.color =
-                              "var(--text-tertiary)";
-                          }}
-                          aria-label={`Delete ${appt.title}`}
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        {format(parseISO(a.starts_at), "h:mma")} {a.title}
                       </div>
                     ))}
+                    {dayAppts.length > 2 && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: "var(--text-tertiary)",
+                          fontFamily: "inherit",
+                          paddingLeft: 2,
+                        }}
+                      >
+                        +{dayAppts.length - 2} more
+                      </span>
+                    )}
                   </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {loading && (
+          <p className="type-small text-center mt-3" style={{ color: "var(--text-tertiary)" }}>
+            Loading…
+          </p>
+        )}
+
+        {/* Selected day detail */}
+        <AnimatePresence>
+          {selectedDay && (
+            <motion.div
+              className="card mt-4"
+              style={{ padding: 0, overflow: "hidden" }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={spring}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-5 py-4"
+                style={{ borderBottom: "1px solid var(--border-subtle)" }}
+              >
+                <div>
+                  <p className="type-caption">{format(selectedDay, "EEEE")}</p>
+                  <p
+                    style={{
+                      fontSize: 17,
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      letterSpacing: "-0.02em",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {format(selectedDay, "MMMM d")}
+                    {isToday(selectedDay) && (
+                      <span
+                        className="ml-2 type-caption"
+                        style={{ color: "var(--accent)", textTransform: "none", letterSpacing: 0 }}
+                      >
+                        Today
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="flex items-center justify-center w-7 h-7 rounded-full"
+                  style={{
+                    background: "var(--bg-card-hover)",
+                    border: "none",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+
+              {selectedDayAppts.length === 0 ? (
+                <div className="px-5 py-6 text-center">
+                  <p className="type-body" style={{ color: "var(--text-secondary)" }}>
+                    Free day.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {selectedDayAppts.map((appt, i) => (
+                    <div
+                      key={appt.id}
+                      className="flex items-center gap-4 px-5 py-3.5"
+                      style={{
+                        borderBottom:
+                          i < selectedDayAppts.length - 1
+                            ? "1px solid var(--border-subtle)"
+                            : "none",
+                      }}
+                    >
+                      <span
+                        className="type-small shrink-0"
+                        style={{
+                          width: 56,
+                          color: isToday(selectedDay)
+                            ? "var(--accent)"
+                            : "var(--text-secondary)",
+                          fontWeight: isToday(selectedDay) ? 600 : 400,
+                        }}
+                      >
+                        {format(parseISO(appt.starts_at), "h:mm a")}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="type-body">{appt.title}</p>
+                        {appt.location && (
+                          <p
+                            className="type-small flex items-center gap-1 mt-0.5"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            <MapPin size={10} className="shrink-0" />
+                            {appt.location}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleDelete(appt.id)}
+                        className="shrink-0 flex items-center justify-center w-7 h-7 rounded-[6px]"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--text-tertiary)",
+                          cursor: "pointer",
+                          transition: "color 120ms",
+                        }}
+                        onMouseEnter={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.color =
+                            "var(--accent-overdue)";
+                        }}
+                        onMouseLeave={(e) => {
+                          (e.currentTarget as HTMLButtonElement).style.color =
+                            "var(--text-tertiary)";
+                        }}
+                        aria-label={`Delete ${appt.title}`}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );

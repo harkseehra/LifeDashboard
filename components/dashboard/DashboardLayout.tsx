@@ -8,6 +8,7 @@ import { AppointmentsSection } from "./AppointmentsSection";
 import { PurchasesStub } from "./PurchasesStub";
 import { addTask, completeTask } from "@/lib/tasks";
 import { addAppointment } from "@/lib/appointments";
+import { addGoal } from "@/lib/goals";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
 import type { Task, Appointment } from "@/lib/types";
 
@@ -64,6 +65,16 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
     }
   };
 
+  const handleAddGoal = async (title: string) => {
+    const { data, error } = await addGoal({ title, emoji: "🌱" });
+    if (error || !data) {
+      showToast("Couldn't create the goal — try again.");
+    } else {
+      showToast("Goal created! 🌱");
+      window.dispatchEvent(new CustomEvent("goal-added", { detail: data }));
+    }
+  };
+
   const handleAddAppointment = async (title: string, starts_at: string) => {
     const tempId = `temp-${Date.now()}`;
     const optimistic: Appointment = {
@@ -98,7 +109,11 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
         animate="visible"
       >
         <motion.div variants={fadeUp} transition={spring}>
-          <QuickCapture onAddTask={handleAddTask} onAddAppointment={handleAddAppointment} />
+          <QuickCapture
+            onAddTask={handleAddTask}
+            onAddAppointment={handleAddAppointment}
+            onAddGoal={handleAddGoal}
+          />
         </motion.div>
 
         <motion.div variants={fadeUp} transition={spring}>

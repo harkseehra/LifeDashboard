@@ -37,3 +37,26 @@ export type NewAppointment = {
   location?: string | null;
   notes?: string | null;
 };
+
+export type Goal = {
+  id: string;
+  user_id: string;
+  title: string;
+  emoji: string;
+  sort_order: number;
+  created_at: string;
+};
+
+export type NewGoal = {
+  title: string;
+  emoji?: string;
+};
+
+export type GoalCheckIn = {
+  id: string;
+  goal_id: string;
+  user_id: string;
+  checked_in_on: string; // YYYY-MM-DD
+  notes: string | null;
+  created_at: string;
+};
