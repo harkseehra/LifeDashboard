@@ -17,9 +17,12 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<GoalWithStreak[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
-  const [newEmoji, setNewEmoji] = useState("🌱");
+  const [selectedEmoji, setSelectedEmoji] = useState("🌱");
+  const [customEmoji, setCustomEmoji] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [adding, setAdding] = useState(false);
+
+  const newEmoji = customEmoji || selectedEmoji;
 
   useEffect(() => {
     loadGoals();
@@ -45,7 +48,8 @@ export default function GoalsPage() {
     if (data) {
       setGoals((prev) => [...prev, { ...data, streak: 0 }]);
       setNewTitle("");
-      setNewEmoji("🌱");
+      setSelectedEmoji("🌱");
+      setCustomEmoji("");
       setShowForm(false);
     }
     setAdding(false);
@@ -118,11 +122,14 @@ export default function GoalsPage() {
                   <button
                     key={e}
                     type="button"
-                    onClick={() => setNewEmoji(e)}
+                    onClick={() => {
+                      setSelectedEmoji(e);
+                      setCustomEmoji("");
+                    }}
                     className="w-9 h-9 rounded-[8px] flex items-center justify-center transition-all duration-100"
                     style={{
                       background:
-                        newEmoji === e
+                        !customEmoji && selectedEmoji === e
                           ? "var(--accent)"
                           : "var(--bg-card-hover)",
                       border: "none",
@@ -135,17 +142,21 @@ export default function GoalsPage() {
                 ))}
                 <input
                   type="text"
-                  value={newEmoji}
-                  onChange={(e) => setNewEmoji(e.target.value)}
+                  value={customEmoji}
+                  onChange={(e) => {
+                    setCustomEmoji(e.target.value);
+                    if (e.target.value) setSelectedEmoji("");
+                  }}
                   maxLength={2}
                   className="w-9 h-9 rounded-[8px] text-center type-body"
                   style={{
-                    background: "var(--bg-card-hover)",
-                    border: "1px solid var(--border-card)",
-                    color: "var(--text-primary)",
+                    background: customEmoji ? "var(--accent)" : "var(--bg-card-hover)",
+                    border: customEmoji ? "none" : "1px solid var(--border-card)",
+                    color: customEmoji ? "#fff" : "var(--text-primary)",
                     outline: "none",
                     fontFamily: "inherit",
                     fontSize: 18,
+                    transition: "background 120ms, border 120ms",
                   }}
                   placeholder="✦"
                 />

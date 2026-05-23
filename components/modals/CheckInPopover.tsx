@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import { spring } from "@/lib/animations";
 import type { Tier } from "@/lib/tiers";
 
 export interface CheckInGoal {
@@ -51,7 +52,7 @@ export function CheckInPopover({
         initial={{ scale: 0.96, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.96, opacity: 0 }}
-        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+        transition={spring}
         className="glass w-full max-w-[380px] rounded-[18px] overflow-hidden"
         style={{
           border: "1px solid var(--border-card)",

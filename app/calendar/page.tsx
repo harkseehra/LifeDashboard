@@ -17,19 +17,20 @@ import {
   subMonths,
   parseISO,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, MapPin, X, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, X, Trash2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { deleteAppointment } from "@/lib/appointments";
+import { addAppointment, deleteAppointment } from "@/lib/appointments";
 import { spring } from "@/lib/animations";
-import type { Appointment } from "@/lib/types";
+import type { Appointment, NewAppointment } from "@/lib/types";
 
-const DAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_HEADERS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const fetchAppointments = useCallback(async (month: Date) => {
     setLoading(true);
@@ -65,21 +66,60 @@ export default function CalendarPage() {
     await deleteAppointment(id);
   };
 
+  const handleAdd = async (appt: NewAppointment) => {
+    const { data } = await addAppointment(appt);
+    if (data) {
+      setAppointments((prev) =>
+        [...prev, data].sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+      );
+    }
+  };
+
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <div style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}>
-        <div className="mb-8">
+      <div
+        style={{
+          padding: "var(--page-top) var(--page-gutter) 60px",
+          maxWidth: 560,
+          margin: "0 auto",
+        }}
+      >
+        <div className="mb-6">
           <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
             ← Dashboard
           </Link>
         </div>
 
         {/* Month nav */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="type-display">{format(currentMonth, "MMMM yyyy")}</h1>
+        <div className="flex items-center justify-between mb-5">
+          <h1
+            className="type-display"
+            style={{ fontSize: "clamp(24px, 3vw, 36px)" }}
+          >
+            {format(currentMonth, "MMMM yyyy")}
+          </h1>
+
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { setCurrentMonth(new Date()); setSelectedDay(new Date()); }}
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full type-small spring-hover"
+              style={{
+                background: "var(--accent)",
+                border: "none",
+                color: "#fff",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              <Plus size={13} />
+              Add
+            </button>
+
+            <button
+              onClick={() => {
+                setCurrentMonth(new Date());
+                setSelectedDay(new Date());
+              }}
               className="type-small px-3 py-1.5 rounded-full spring-hover"
               style={{
                 background: "var(--bg-card)",
@@ -92,6 +132,7 @@ export default function CalendarPage() {
             >
               Today
             </button>
+
             {[
               { fn: () => setCurrentMonth((m) => subMonths(m, 1)), icon: <ChevronLeft size={15} />, label: "Previous" },
               { fn: () => setCurrentMonth((m) => addMonths(m, 1)), icon: <ChevronRight size={15} />, label: "Next" },
@@ -115,31 +156,38 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Calendar card */}
+        {/* Calendar grid */}
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           {/* Day headers */}
           <div
             className="grid grid-cols-7"
             style={{ borderBottom: "1px solid var(--border-subtle)" }}
           >
-            {DAY_HEADERS.map((d) => (
-              <div key={d} className="type-caption text-center py-3">
+            {DAY_HEADERS.map((d, i) => (
+              <div
+                key={i}
+                className="type-caption text-center py-2.5"
+                style={{
+                  color:
+                    i === 0 || i === 6
+                      ? "var(--text-tertiary)"
+                      : "var(--text-secondary)",
+                }}
+              >
                 {d}
               </div>
             ))}
           </div>
 
           {/* Day cells */}
-          <div
-            className="grid grid-cols-7"
-            style={{ borderTop: "none" }}
-          >
+          <div className="grid grid-cols-7">
             {days.map((day, idx) => {
               const dayAppts = apptsByDay(day);
               const inMonth = isSameMonth(day, currentMonth);
               const isSelected = selectedDay ? isSameDay(day, selectedDay) : false;
               const todayDay = isToday(day);
               const col = idx % 7;
+              const isWeekend = col === 0 || col === 6;
 
               return (
                 <button
@@ -149,33 +197,38 @@ export default function CalendarPage() {
                       prev && isSameDay(prev, day) ? null : day
                     )
                   }
-                  className="flex flex-col gap-1 p-2 text-left"
+                  className="flex flex-col items-center gap-1 py-2"
                   style={{
                     background: isSelected
                       ? "var(--bg-card-hover)"
-                      : "var(--bg-card)",
-                    minHeight: 88,
+                      : "transparent",
+                    minHeight: 52,
                     cursor: "pointer",
                     border: "none",
                     borderTop: "1px solid var(--border-subtle)",
-                    borderRight: col < 6 ? "1px solid var(--border-subtle)" : "none",
+                    borderRight:
+                      col < 6 ? "1px solid var(--border-subtle)" : "none",
                     transition: "background 120ms",
                   }}
                 >
                   <span
-                    className="flex items-center justify-center self-start"
                     style={{
-                      width: 22,
-                      height: 22,
+                      width: 26,
+                      height: 26,
                       borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                       background: todayDay ? "var(--accent)" : "transparent",
                       color: todayDay
                         ? "#fff"
                         : inMonth
-                        ? "var(--text-primary)"
+                        ? isWeekend
+                          ? "var(--text-secondary)"
+                          : "var(--text-primary)"
                         : "var(--text-tertiary)",
-                      fontWeight: todayDay ? 600 : 400,
-                      fontSize: 12,
+                      fontWeight: todayDay ? 600 : inMonth ? 400 : 300,
+                      fontSize: 13,
                       fontFamily: "inherit",
                       flexShrink: 0,
                     }}
@@ -183,38 +236,34 @@ export default function CalendarPage() {
                     {format(day, "d")}
                   </span>
 
-                  <div className="flex flex-col gap-px w-full">
-                    {dayAppts.slice(0, 2).map((a) => (
-                      <div
-                        key={a.id}
-                        className="truncate"
-                        style={{
-                          background: "var(--accent)",
-                          color: "#fff",
-                          borderRadius: 3,
-                          padding: "1px 4px",
-                          fontSize: 10,
-                          fontWeight: 500,
-                          lineHeight: 1.7,
-                          fontFamily: "inherit",
-                        }}
-                      >
-                        {format(parseISO(a.starts_at), "h:mma")} {a.title}
-                      </div>
-                    ))}
-                    {dayAppts.length > 2 && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: "var(--text-tertiary)",
-                          fontFamily: "inherit",
-                          paddingLeft: 2,
-                        }}
-                      >
-                        +{dayAppts.length - 2} more
-                      </span>
-                    )}
-                  </div>
+                  {/* Appointment dots */}
+                  {dayAppts.length > 0 && (
+                    <div className="flex gap-px items-center">
+                      {dayAppts.slice(0, 3).map((_, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: "50%",
+                            background: todayDay
+                              ? "rgba(255,255,255,0.75)"
+                              : "var(--accent)",
+                          }}
+                        />
+                      ))}
+                      {dayAppts.length > 3 && (
+                        <div
+                          style={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: "50%",
+                            background: "var(--text-tertiary)",
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -222,7 +271,10 @@ export default function CalendarPage() {
         </div>
 
         {loading && (
-          <p className="type-small text-center mt-3" style={{ color: "var(--text-tertiary)" }}>
+          <p
+            className="type-small text-center mt-3"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             Loading…
           </p>
         )}
@@ -258,30 +310,53 @@ export default function CalendarPage() {
                     {isToday(selectedDay) && (
                       <span
                         className="ml-2 type-caption"
-                        style={{ color: "var(--accent)", textTransform: "none", letterSpacing: 0 }}
+                        style={{
+                          color: "var(--accent)",
+                          textTransform: "none",
+                          letterSpacing: 0,
+                        }}
                       >
                         Today
                       </span>
                     )}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSelectedDay(null)}
-                  className="flex items-center justify-center w-7 h-7 rounded-full"
-                  style={{
-                    background: "var(--bg-card-hover)",
-                    border: "none",
-                    color: "var(--text-secondary)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <X size={13} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowAddModal(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full type-small spring-hover"
+                    style={{
+                      background: "var(--accent)",
+                      border: "none",
+                      color: "#fff",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    <Plus size={12} />
+                    Add
+                  </button>
+                  <button
+                    onClick={() => setSelectedDay(null)}
+                    className="flex items-center justify-center w-7 h-7 rounded-full"
+                    style={{
+                      background: "var(--bg-card-hover)",
+                      border: "none",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
               </div>
 
               {selectedDayAppts.length === 0 ? (
                 <div className="px-5 py-6 text-center">
-                  <p className="type-body" style={{ color: "var(--text-secondary)" }}>
+                  <p
+                    className="type-body"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Free day.
                   </p>
                 </div>
@@ -352,6 +427,262 @@ export default function CalendarPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Add Appointment Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <AddAppointmentModal
+            onClose={() => setShowAddModal(false)}
+            onAdd={handleAdd}
+            defaultDate={selectedDay ?? new Date()}
+          />
+        )}
+      </AnimatePresence>
     </main>
+  );
+}
+
+function AddAppointmentModal({
+  onClose,
+  onAdd,
+  defaultDate,
+}: {
+  onClose: () => void;
+  onAdd: (appt: NewAppointment) => Promise<void>;
+  defaultDate: Date;
+}) {
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(format(defaultDate, "yyyy-MM-dd"));
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
+  const [location, setLocation] = useState("");
+  const [notes, setNotes] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || adding) return;
+    setAdding(true);
+    const starts_at = new Date(`${date}T${startTime}`).toISOString();
+    const ends_at = endTime
+      ? new Date(`${date}T${endTime}`).toISOString()
+      : null;
+    await onAdd({
+      title: title.trim(),
+      starts_at,
+      ends_at,
+      location: location.trim() || null,
+      notes: notes.trim() || null,
+    });
+    setAdding(false);
+    onClose();
+  };
+
+  const fieldStyle = {
+    background: "var(--bg-base)",
+    border: "1px solid var(--border-card)",
+    color: "var(--text-primary)",
+    fontFamily: "inherit",
+    outline: "none",
+    transition: "border-color 150ms, box-shadow 150ms",
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.style.borderColor = "var(--accent)";
+    e.target.style.boxShadow = "0 0 0 3px rgba(0,122,255,0.12)";
+  };
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.style.borderColor = "var(--border-card)";
+    e.target.style.boxShadow = "none";
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{
+        background: "rgba(0,0,0,0.32)",
+        backdropFilter: "blur(8px)",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 8 }}
+        transition={spring}
+        className="w-full max-w-[460px] rounded-[20px] overflow-hidden"
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-card)",
+          boxShadow: "0 24px 80px rgba(0,0,0,0.22)",
+        }}
+      >
+        {/* Modal header */}
+        <div
+          className="flex items-center justify-between px-6 py-4"
+          style={{ borderBottom: "1px solid var(--border-subtle)" }}
+        >
+          <p className="type-section">New Appointment</p>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-full"
+            style={{
+              background: "var(--bg-card-hover)",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-6 py-5 flex flex-col gap-4">
+          {/* Title */}
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Title"
+            autoFocus
+            className="w-full outline-none bg-transparent"
+            style={{
+              border: "none",
+              borderBottom: "2px solid var(--border-card)",
+              paddingBottom: 10,
+              color: "var(--text-primary)",
+              fontFamily: "inherit",
+              fontSize: 18,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              transition: "border-color 150ms",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderBottomColor = "var(--accent)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderBottomColor = "var(--border-card)";
+            }}
+          />
+
+          {/* Date */}
+          <div className="flex flex-col gap-1.5">
+            <label className="type-caption">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full type-body rounded-[10px] px-3 py-2.5"
+              style={fieldStyle}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+            />
+          </div>
+
+          {/* Time */}
+          <div className="flex gap-3">
+            <div className="flex-1 flex flex-col gap-1.5">
+              <label className="type-caption">Start time</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full type-body rounded-[10px] px-3 py-2.5"
+                style={fieldStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            </div>
+            <div className="flex-1 flex flex-col gap-1.5">
+              <label className="type-caption">End time</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                className="w-full type-body rounded-[10px] px-3 py-2.5"
+                style={fieldStyle}
+                onFocus={handleFocus}
+                onBlur={handleBlur}
+              />
+            </div>
+          </div>
+
+          {/* Location */}
+          <div
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px]"
+            style={{
+              background: "var(--bg-base)",
+              border: "1px solid var(--border-card)",
+              transition: "border-color 150ms, box-shadow 150ms",
+            }}
+          >
+            <MapPin
+              size={13}
+              style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+            />
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Location"
+              className="flex-1 type-body outline-none bg-transparent"
+              style={{
+                border: "none",
+                color: "var(--text-primary)",
+                fontFamily: "inherit",
+              }}
+            />
+          </div>
+
+          {/* Notes */}
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notes"
+            rows={2}
+            className="w-full type-body rounded-[10px] px-3 py-2.5 resize-none"
+            style={{ ...fieldStyle, outline: "none" }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+
+          {/* Actions */}
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-[10px] type-small"
+              style={{
+                background: "var(--bg-card-hover)",
+                border: "none",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!title.trim() || adding}
+              className="flex-1 py-2.5 rounded-[10px] type-small"
+              style={{
+                background: "var(--accent)",
+                border: "none",
+                color: "#fff",
+                cursor: title.trim() && !adding ? "pointer" : "not-allowed",
+                fontFamily: "inherit",
+                opacity: !title.trim() || adding ? 0.6 : 1,
+                transition: "opacity 150ms",
+              }}
+            >
+              {adding ? "Adding…" : "Add Appointment"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
   );
 }

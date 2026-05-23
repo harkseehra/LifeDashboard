@@ -1,8 +1,10 @@
 "use client";
 
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
+import { fadeUp, spring } from "@/lib/animations";
 import type { Appointment } from "@/lib/types";
 
 interface AppointmentsSectionProps {
@@ -27,6 +29,7 @@ function groupAppointments(appointments: Appointment[]) {
 
 export function AppointmentsSection({ appointments }: AppointmentsSectionProps) {
   const { today, upcoming } = groupAppointments(appointments);
+  let rowIndex = 0;
 
   return (
     <section>
@@ -47,14 +50,24 @@ export function AppointmentsSection({ appointments }: AppointmentsSectionProps) 
             <div className="px-5 pt-4 pb-1">
               <span className="type-caption">Today</span>
             </div>
-            {today.map((appt, i) => (
-              <AppointmentRow
-                key={appt.id}
-                appt={appt}
-                isToday
-                showDivider={i < today.length - 1 || upcoming.length > 0}
-              />
-            ))}
+            {today.map((appt, i) => {
+              const idx = rowIndex++;
+              return (
+                <motion.div
+                  key={appt.id}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ ...spring, delay: idx * 0.05 }}
+                >
+                  <AppointmentRow
+                    appt={appt}
+                    isToday
+                    showDivider={i < today.length - 1 || upcoming.length > 0}
+                  />
+                </motion.div>
+              );
+            })}
           </div>
         )}
 
@@ -63,20 +76,33 @@ export function AppointmentsSection({ appointments }: AppointmentsSectionProps) 
             <div className="px-5 pt-4 pb-1">
               <span className="type-caption">Upcoming</span>
             </div>
-            {upcoming.map((appt, i) => (
-              <AppointmentRow
-                key={appt.id}
-                appt={appt}
-                isToday={false}
-                showDivider={i < upcoming.length - 1}
-              />
-            ))}
+            {upcoming.map((appt, i) => {
+              const idx = rowIndex++;
+              return (
+                <motion.div
+                  key={appt.id}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  transition={{ ...spring, delay: idx * 0.05 }}
+                >
+                  <AppointmentRow
+                    appt={appt}
+                    isToday={false}
+                    showDivider={i < upcoming.length - 1}
+                  />
+                </motion.div>
+              );
+            })}
           </div>
         )}
 
         {today.length === 0 && upcoming.length === 0 && (
           <div className="px-5 py-8">
-            <p className="type-body text-center" style={{ color: "var(--text-secondary)" }}>
+            <p
+              className="type-body text-center"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Nothing on the books.
             </p>
           </div>
@@ -99,9 +125,7 @@ function AppointmentRow({
 }) {
   const date = parseISO(appt.starts_at);
   const timeStr = format(date, "h:mm a");
-  const dateLabel = isTomorrow(date)
-    ? "Tomorrow"
-    : format(date, "MMM d");
+  const dateLabel = isTomorrow(date) ? "Tomorrow" : format(date, "MMM d");
 
   return (
     <div
@@ -113,7 +137,10 @@ function AppointmentRow({
       {/* Time column */}
       <div className="shrink-0 pt-0.5" style={{ width: 68 }}>
         {!today && (
-          <div className="type-caption mb-0.5" style={{ color: "var(--text-tertiary)" }}>
+          <div
+            className="type-caption mb-0.5"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             {dateLabel}
           </div>
         )}

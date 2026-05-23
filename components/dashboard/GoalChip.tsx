@@ -1,5 +1,7 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { spring } from "@/lib/animations";
 import type { CheckInGoal } from "@/components/modals/CheckInPopover";
 
 interface GoalChipProps {
@@ -16,9 +18,11 @@ export function GoalChip({
   checkedIn = false,
 }: GoalChipProps) {
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className="flex items-center gap-3 px-4 py-3 rounded-card shrink-0 transition-all duration-150"
+      whileTap={{ scale: 0.96 }}
+      transition={spring}
+      className="flex items-center gap-3 px-4 py-3 rounded-card shrink-0"
       style={{
         background: checkedIn ? "rgba(52,199,89,0.08)" : "var(--bg-card)",
         border: `1.5px solid ${
@@ -29,23 +33,20 @@ export function GoalChip({
             : "var(--border-card)"
         }`,
         boxShadow: "var(--shadow-card)",
-        cursor: "pointer",
+        cursor: checkedIn ? "default" : "pointer",
         fontFamily: "inherit",
         textAlign: "left",
+        transition: "background 180ms ease",
       }}
       onMouseEnter={(e) => {
-        if (!checkedIn) e.currentTarget.style.background = "var(--bg-card-hover)";
+        e.currentTarget.style.background = checkedIn
+          ? "rgba(52,199,89,0.12)"
+          : "var(--bg-card-hover)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = checkedIn
           ? "rgba(52,199,89,0.08)"
           : "var(--bg-card)";
-      }}
-      onMouseDown={(e) => {
-        e.currentTarget.style.transform = "scale(0.97)";
-      }}
-      onMouseUp={(e) => {
-        e.currentTarget.style.transform = "scale(1)";
       }}
     >
       <span style={{ fontSize: 20, lineHeight: 1 }}>{goal.emoji}</span>
@@ -60,6 +61,6 @@ export function GoalChip({
           {goal.streak > 0 ? `${goal.streak} day streak` : "Start today"}
         </span>
       </div>
-    </button>
+    </motion.button>
   );
 }
