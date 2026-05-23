@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { parseQuickCapture } from "@/lib/parse-quick-capture";
-import { spring } from "@/lib/animations";
+import { spring, micro, quick } from "@/lib/animations";
 
 type CaptureMode = "task" | "appointment" | "goal";
 
@@ -109,13 +109,10 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
             transition: "border-color 220ms ease, box-shadow 280ms ease",
           }}
         >
-          {/* ── Mode tabs ── */}
+          {/* Mode tabs */}
           <div
             className="flex"
-            style={{
-              borderBottom: "1px solid var(--border-subtle)",
-              paddingLeft: 6,
-            }}
+            style={{ borderBottom: "1px solid var(--border-subtle)", paddingLeft: 6 }}
           >
             {MODES.map((m) => (
               <button
@@ -132,7 +129,7 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
                   fontSize: 12,
                   fontWeight: mode === m.key ? 600 : 400,
                   letterSpacing: "0.01em",
-                  transition: "color 180ms ease",
+                  transition: "color 150ms ease",
                   userSelect: "none",
                 }}
               >
@@ -143,11 +140,7 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
                   <motion.div
                     layoutId="mode-indicator"
                     className="absolute bottom-0 left-3 right-3"
-                    style={{
-                      height: 2,
-                      background: m.color,
-                      borderRadius: "2px 2px 0 0",
-                    }}
+                    style={{ height: 2, background: m.color, borderRadius: "2px 2px 0 0" }}
                     transition={spring}
                   />
                 )}
@@ -155,19 +148,15 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
             ))}
           </div>
 
-          {/* ── Input row ── */}
-          <div
-            className="flex items-center gap-3 px-5"
-            style={{ minHeight: 56 }}
-          >
-            {/* Animated mode icon */}
+          {/* Input row */}
+          <div className="flex items-center gap-3 px-5" style={{ minHeight: 56 }}>
             <AnimatePresence mode="wait">
               <motion.span
                 key={mode}
                 initial={{ opacity: 0, scale: 0.4, rotate: -15 }}
                 animate={{ opacity: 1, scale: 1, rotate: 0 }}
                 exit={{ opacity: 0, scale: 0.4, rotate: 15 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                transition={quick}
                 style={{
                   fontSize: 17,
                   color: current.color,
@@ -181,7 +170,6 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
               </motion.span>
             </AnimatePresence>
 
-            {/* Bare input — no border, blends into card */}
             <input
               ref={inputRef}
               type="text"
@@ -192,21 +180,16 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
               placeholder={current.placeholder}
               disabled={submitting}
               className="flex-1 type-body bg-transparent outline-none"
-              style={{
-                border: "none",
-                color: "var(--text-primary)",
-                opacity: submitting ? 0.5 : 1,
-              }}
+              style={{ border: "none", color: "var(--text-primary)", opacity: submitting ? 0.5 : 1 }}
             />
 
-            {/* ↵ hint badge */}
             <AnimatePresence>
               {value && !submitting && (
                 <motion.kbd
                   initial={{ opacity: 0, x: 10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 10 }}
-                  transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  transition={micro}
                   className="type-caption shrink-0"
                   style={{
                     color: "var(--text-tertiary)",
@@ -232,7 +215,7 @@ export function QuickCapture({ onAddTask, onAddAppointment, onAddGoal }: QuickCa
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15 }}
+            transition={micro}
             className="type-small px-1"
             style={{ color: "var(--accent-warning)" }}
           >

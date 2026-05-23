@@ -141,7 +141,7 @@ export default function SettingsPage() {
                   Location
                 </p>
                 <p className="type-small">
-                  Weather uses your device&apos;s GPS. Coordinates go directly
+                  Weather uses your device GPS. Coordinates go directly
                   to Open-Meteo and are never stored.
                 </p>
               </div>
