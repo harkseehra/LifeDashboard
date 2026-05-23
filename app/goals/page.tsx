@@ -63,11 +63,7 @@ export default function GoalsPage() {
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <motion.div
-        style={{
-          padding: "var(--page-top) var(--page-gutter) 60px",
-          maxWidth: 600,
-          margin: "0 auto",
-        }}
+        style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}
         variants={staggerParent}
         initial="hidden"
         animate="visible"

@@ -102,7 +102,7 @@ export default function TasksPage() {
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <motion.div
         className="flex flex-col gap-8"
-        style={{ padding: "var(--page-top) var(--page-gutter) 60px", maxWidth: 760, margin: "0 auto" }}
+        style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}
         variants={staggerParent}
         initial="hidden"
         animate="visible"

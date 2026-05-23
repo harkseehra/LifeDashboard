@@ -78,11 +78,7 @@ export default function CalendarPage() {
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
       <div
-        style={{
-          padding: "var(--page-top) var(--page-gutter) 60px",
-          maxWidth: 560,
-          margin: "0 auto",
-        }}
+        style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}
       >
         <div className="mb-6">
           <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
