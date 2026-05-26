@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePlaidLink } from "react-plaid-link";
@@ -193,6 +193,27 @@ function ConnectBankButton({ onSuccess }: { onSuccess: () => void }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────
 
+// AI category cache — persisted in localStorage
+const AI_CACHE_KEY = "ld_tx_categories";
+
+function loadCache(): Record<string, { emoji: string; label: string }> {
+  try { return JSON.parse(localStorage.getItem(AI_CACHE_KEY) ?? "{}"); } catch { return {}; }
+}
+function saveCache(c: Record<string, { emoji: string; label: string }>) {
+  try { localStorage.setItem(AI_CACHE_KEY, JSON.stringify(c)); } catch { /* ignore */ }
+}
+
+// Label → color for AI categories
+const LABEL_COLOR: Record<string, string> = {
+  Food: "#FF9500", Coffee: "#A0522D", Groceries: "#34C759",
+  Gas: "#34C759", Transport: "#34C759", Travel: "#5AC8FA",
+  Shopping: "#007AFF", Entertainment: "#AF52DE", Health: "#FF3B30",
+  Pharmacy: "#FF3B30", Rent: "#8E8E93", Utilities: "#FFCC00",
+  Phone: "#8E8E93", Internet: "#8E8E93", Subscriptions: "#8E8E93",
+  Education: "#5AC8FA", Finance: "#636366", Income: "#34C759",
+  Other: "#8E8E93",
+};
+
 export default function PurchasesPage() {
   const [transactions, setTransactions] = useState<PlaidTransaction[]>([]);
   const [accounts, setAccounts] = useState<PlaidAccount[]>([]);
@@ -200,9 +221,38 @@ export default function PurchasesPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiCategories, setAiCategories] = useState<Record<string, { emoji: string; label: string }>>({});
+  const categorizingRef = useRef(false);
+
+  const categorizeWithAI = useCallback(async (txs: PlaidTransaction[]) => {
+    if (categorizingRef.current || !txs.length) return;
+    const cache = loadCache();
+    const uncached = txs.filter(t => !cache[t.transaction_id]);
+    if (!uncached.length) { setAiCategories(cache); return; }
+
+    categorizingRef.current = true;
+    try {
+      const res = await fetch("/api/ai/categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactions: uncached.map(t => ({
+          id: t.transaction_id, name: t.name, merchant_name: t.merchant_name, amount: t.amount,
+        })) }),
+      });
+      const json = await res.json();
+      if (json.categories) {
+        const merged = { ...cache, ...json.categories };
+        saveCache(merged);
+        setAiCategories(merged);
+      }
+    } finally {
+      categorizingRef.current = false;
+    }
+  }, []);
 
   const loadData = useCallback(async () => {
     setError(null);
+    setAiCategories(loadCache());
     const supabase = createClient();
     const { data: itemData } = await supabase
       .from("plaid_items")
@@ -219,13 +269,17 @@ export default function PurchasesPage() {
     const acctJson = await acctRes.json();
 
     if (txJson.error) setError(txJson.error);
-    else setTransactions(txJson.transactions ?? []);
+    else {
+      const txs = txJson.transactions ?? [];
+      setTransactions(txs);
+      categorizeWithAI(txs);
+    }
 
     if (!acctJson.error) setAccounts(acctJson.accounts ?? []);
 
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [categorizeWithAI]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -417,7 +471,11 @@ export default function PurchasesPage() {
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               <AnimatePresence initial={false}>
                 {sorted.map((t, i) => {
-                  const { emoji, color, label } = getCategoryInfo(t.category);
+                  const ai = aiCategories[t.transaction_id];
+                  const fallback = getCategoryInfo(t.category);
+                  const emoji = ai?.emoji ?? fallback.emoji;
+                  const label = ai?.label ?? fallback.label;
+                  const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;
                   return (
                     <motion.div
                       key={t.transaction_id}
