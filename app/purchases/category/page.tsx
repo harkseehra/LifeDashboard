@@ -121,9 +121,37 @@ interface PlaidTransaction {
   pending: boolean;
 }
 
+const PFC_DETAILED_LABELS: Record<string, string> = {
+  FOOD_AND_DRINK_GROCERIES:             "Groceries",
+  FOOD_AND_DRINK_COFFEE:                "Coffee",
+  FOOD_AND_DRINK_FAST_FOOD:             "Fast Food",
+  FOOD_AND_DRINK_RESTAURANTS:           "Restaurants",
+  FOOD_AND_DRINK_ALCOHOL_AND_BAR:       "Bars & Drinks",
+  TRANSPORTATION_GAS_AND_CONVENIENCE:   "Gas",
+  TRANSPORTATION_PARKING:               "Parking",
+  TRANSPORTATION_PUBLIC_TRANSIT:        "Public Transit",
+  TRANSPORTATION_TAXIS_AND_RIDE_SHARES: "Ride Share",
+  TRAVEL_FLIGHTS:                       "Flights",
+  TRAVEL_HOTELS_AND_MOTELS:             "Hotels",
+  ENTERTAINMENT_TV_AND_MOVIES:          "Streaming",
+  ENTERTAINMENT_MUSIC_AND_AUDIO:        "Music",
+  ENTERTAINMENT_VIDEO_GAMES:            "Games",
+  SHOPPING_CLOTHING_AND_ACCESSORIES:    "Clothing",
+  SHOPPING_ELECTRONICS:                 "Electronics",
+  MEDICAL_PHARMACIES_AND_SUPPLEMENTS:   "Pharmacy",
+  MEDICAL_GYMS_AND_FITNESS:             "Gym & Fitness",
+  RENT_AND_UTILITIES_RENT:              "Rent",
+  RENT_AND_UTILITIES_TELEPHONE:         "Phone",
+  RENT_AND_UTILITIES_INTERNET:          "Internet",
+  RENT_AND_UTILITIES_ELECTRICITY:       "Electricity",
+  INCOME_WAGES:                         "Wages",
+};
+
 function getCategoryInfo(cats: string[] | null, pfcPrimary: string | null, pfcDetailed: string | null): { emoji: string; color: string; label: string } {
   if (pfcDetailed && CATEGORY_MAP[pfcDetailed]) {
-    const label = pfcPrimary?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) ?? "Other";
+    const label = PFC_DETAILED_LABELS[pfcDetailed]
+      ?? pfcPrimary?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+      ?? "Other";
     return { ...CATEGORY_MAP[pfcDetailed], label };
   }
   if (pfcPrimary && CATEGORY_MAP[pfcPrimary]) {
@@ -142,8 +170,13 @@ function getCategoryInfo(cats: string[] | null, pfcPrimary: string | null, pfcDe
 function getNameOverride(name: string, merchantName: string | null, amount?: number): { emoji: string; color: string; label: string } | null {
   const haystack = `${name} ${merchantName ?? ""}`.toLowerCase();
   if (haystack.includes("presto")) return { emoji: "🚌", color: "#34C759", label: "Transportation" };
-  if (haystack.includes("fresco") || haystack.includes("walmart"))
-    return { emoji: "🥦", color: "#34C759", label: "Groceries" };
+  if (
+    haystack.includes("fresco") ||
+    haystack.includes("freshco") ||
+    haystack.includes("fresh co") ||
+    haystack.includes("walmart") ||
+    haystack.includes("wal-mart")
+  ) return { emoji: "🥦", color: "#34C759", label: "Groceries" };
   if (haystack.includes("paypal")) return { emoji: "🅿️", color: "#003087", label: "PayPal" };
   if (haystack.includes("interac") || haystack.includes("e-transfer") || haystack.includes("etransfer")) {
     if (amount !== undefined && amount >= 400) return { emoji: "🏠", color: "#8E8E93", label: "Rent & Utilities" };

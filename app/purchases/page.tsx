@@ -101,13 +101,43 @@ const CATEGORY_MAP: Record<string, { emoji: string; color: string }> = {
   "Charity":                   { emoji: "❤️", color: "#FF3B30" },
 };
 
+// Maps PFC detailed codes to human-readable labels so groceries don't group under "Food And Drink"
+const PFC_DETAILED_LABELS: Record<string, string> = {
+  FOOD_AND_DRINK_GROCERIES:           "Groceries",
+  FOOD_AND_DRINK_COFFEE:              "Coffee",
+  FOOD_AND_DRINK_FAST_FOOD:           "Fast Food",
+  FOOD_AND_DRINK_RESTAURANTS:         "Restaurants",
+  FOOD_AND_DRINK_ALCOHOL_AND_BAR:     "Bars & Drinks",
+  TRANSPORTATION_GAS_AND_CONVENIENCE: "Gas",
+  TRANSPORTATION_PARKING:             "Parking",
+  TRANSPORTATION_PUBLIC_TRANSIT:      "Public Transit",
+  TRANSPORTATION_TAXIS_AND_RIDE_SHARES: "Ride Share",
+  TRAVEL_FLIGHTS:                     "Flights",
+  TRAVEL_HOTELS_AND_MOTELS:           "Hotels",
+  ENTERTAINMENT_TV_AND_MOVIES:        "Streaming",
+  ENTERTAINMENT_MUSIC_AND_AUDIO:      "Music",
+  ENTERTAINMENT_VIDEO_GAMES:          "Games",
+  SHOPPING_CLOTHING_AND_ACCESSORIES:  "Clothing",
+  SHOPPING_ELECTRONICS:               "Electronics",
+  MEDICAL_PHARMACIES_AND_SUPPLEMENTS: "Pharmacy",
+  MEDICAL_GYMS_AND_FITNESS:           "Gym & Fitness",
+  RENT_AND_UTILITIES_RENT:            "Rent",
+  RENT_AND_UTILITIES_TELEPHONE:       "Phone",
+  RENT_AND_UTILITIES_INTERNET:        "Internet",
+  RENT_AND_UTILITIES_ELECTRICITY:     "Electricity",
+  INCOME_WAGES:                       "Wages",
+};
+
 function getCategoryInfo(
   cats: string[] | null,
   pfcPrimary: string | null,
   pfcDetailed: string | null,
 ): { emoji: string; color: string; label: string } {
   if (pfcDetailed && CATEGORY_MAP[pfcDetailed]) {
-    const label = pfcPrimary?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) ?? "Other";
+    // Use the detailed label if available, otherwise fall back to primary
+    const label = PFC_DETAILED_LABELS[pfcDetailed]
+      ?? pfcPrimary?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+      ?? "Other";
     return { ...CATEGORY_MAP[pfcDetailed], label };
   }
   if (pfcPrimary && CATEGORY_MAP[pfcPrimary]) {
@@ -132,9 +162,14 @@ function getNameOverride(
   const haystack = `${name} ${merchantName ?? ""}`.toLowerCase();
   // Transit cards
   if (haystack.includes("presto")) return { emoji: "🚌", color: "#34C759", label: "Transportation" };
-  // Grocery stores
-  if (haystack.includes("fresco") || haystack.includes("walmart"))
-    return { emoji: "🥦", color: "#34C759", label: "Groceries" };
+  // Grocery stores (fresco, freshco, wal-mart variants)
+  if (
+    haystack.includes("fresco") ||
+    haystack.includes("freshco") ||
+    haystack.includes("fresh co") ||
+    haystack.includes("walmart") ||
+    haystack.includes("wal-mart")
+  ) return { emoji: "🥦", color: "#34C759", label: "Groceries" };
   // PayPal (check before Interac so PayPal e-transfers don't fall through)
   if (haystack.includes("paypal")) return { emoji: "🅿️", color: "#003087", label: "PayPal" };
   // Interac e-transfers: large amounts (>=400) treated as rent
