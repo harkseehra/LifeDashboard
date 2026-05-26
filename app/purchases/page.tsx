@@ -172,6 +172,7 @@ interface CategoryBreakdown {
   total: number;
   count: number;
   pct: number;
+  transactions: PlaidTransaction[];
 }
 
 // ── Connect Bank button ────────────────────────────────────────────────────
@@ -273,6 +274,8 @@ export default function PurchasesPage() {
   const [aiCategories, setAiCategories] = useState<Record<string, { emoji: string; label: string }>>({});
   const [days, setDays] = useState<30 | 60 | 90>(30);
   const [periodLoading, setPeriodLoading] = useState(false);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const categorizingRef = useRef(false);
 
   const categorizeWithAI = useCallback(async (txs: PlaidTransaction[]) => {
@@ -362,7 +365,7 @@ export default function PurchasesPage() {
 
   // ── Category breakdown ────────────────────────────────────────────────────
   const categoryBreakdown: CategoryBreakdown[] = (() => {
-    const map = new Map<string, { emoji: string; color: string; total: number; count: number }>();
+    const map = new Map<string, { emoji: string; color: string; total: number; count: number; transactions: PlaidTransaction[] }>();
     for (const t of expenses) {
       const ai = aiCategories[t.transaction_id];
       const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
@@ -373,8 +376,9 @@ export default function PurchasesPage() {
       if (existing) {
         existing.total += t.amount;
         existing.count += 1;
+        existing.transactions.push(t);
       } else {
-        map.set(label, { emoji, color, total: t.amount, count: 1 });
+        map.set(label, { emoji, color, total: t.amount, count: 1, transactions: [t] });
       }
     }
     const entries = Array.from(map.entries())
@@ -510,67 +514,133 @@ export default function PurchasesPage() {
                 </span>
               </div>
 
-              {/* Top categories — bar chart style */}
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                {categoryBreakdown.slice(0, 8).map((cat, i) => (
-                  <div
-                    key={cat.label}
-                    className="flex items-center gap-4 px-5 py-3.5"
-                    style={{ borderBottom: i < Math.min(categoryBreakdown.length, 8) - 1 ? "1px solid var(--border-subtle)" : "none" }}
-                  >
-                    {/* Emoji */}
-                    <div
-                      className="shrink-0 flex items-center justify-center"
-                      style={{
-                        width: 36, height: 36, borderRadius: 10,
-                        background: `${cat.color}18`,
-                        fontSize: 18, lineHeight: 1,
-                      }}
-                    >
-                      {cat.emoji}
-                    </div>
-
-                    {/* Category + bar */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="type-body" style={{ fontWeight: 500 }}>{cat.label}</span>
-                        <span className="type-body shrink-0" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                          ${cat.total.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
+                {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 8)).map((cat, i, arr) => {
+                  const isExpanded = expandedCategory === cat.label;
+                  const catTxs = [...cat.transactions].sort((a, b) => b.date.localeCompare(a.date));
+                  return (
+                    <div key={cat.label} style={{ borderBottom: i < arr.length - 1 || (categoryBreakdown.length > 8 && !showAllCategories) ? "1px solid var(--border-subtle)" : "none" }}>
+                      {/* Category row — clickable */}
+                      <button
+                        onClick={() => setExpandedCategory(isExpanded ? null : cat.label)}
+                        className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors duration-100"
+                        style={{
+                          background: isExpanded ? "var(--bg-card-hover)" : "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          textAlign: "left",
+                        }}
+                      >
+                        {/* Emoji */}
                         <div
-                          className="flex-1 rounded-full overflow-hidden"
-                          style={{ height: 4, background: "var(--bg-card-hover)" }}
+                          className="shrink-0 flex items-center justify-center"
+                          style={{ width: 36, height: 36, borderRadius: 10, background: `${cat.color}18`, fontSize: 18, lineHeight: 1 }}
                         >
-                          <motion.div
-                            style={{ height: 4, background: cat.color, borderRadius: 9999 }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${cat.pct}%` }}
-                            transition={{ ...springGentle, delay: i * 0.04 }}
-                          />
+                          {cat.emoji}
                         </div>
-                        <span className="type-small shrink-0" style={{ color: "var(--text-tertiary)", width: 32, textAlign: "right" }}>
-                          {cat.count}×
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
 
-                {/* Show all / collapsed rest */}
+                        {/* Category + bar */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="type-body" style={{ fontWeight: 500 }}>{cat.label}</span>
+                            <span className="type-body shrink-0" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                              ${cat.total.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: "var(--bg-card-hover)" }}>
+                              <motion.div
+                                style={{ height: 4, background: cat.color, borderRadius: 9999 }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${cat.pct}%` }}
+                                transition={{ ...springGentle, delay: i * 0.04 }}
+                              />
+                            </div>
+                            <span className="type-small shrink-0" style={{ color: "var(--text-tertiary)", width: 32, textAlign: "right" }}>
+                              {cat.count}×
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Chevron */}
+                        <motion.svg
+                          width="14" height="14" viewBox="0 0 14 14" fill="none"
+                          animate={{ rotate: isExpanded ? 180 : 0 }}
+                          transition={micro}
+                          style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+                        >
+                          <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </motion.svg>
+                      </button>
+
+                      {/* Expanded transactions */}
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={springGentle}
+                            style={{ overflow: "hidden" }}
+                          >
+                            <div style={{ borderTop: `1px solid ${cat.color}22`, background: `${cat.color}06` }}>
+                              {catTxs.map((t, j) => (
+                                <div
+                                  key={t.transaction_id}
+                                  className="flex items-center gap-3 px-5 py-3"
+                                  style={{ borderBottom: j < catTxs.length - 1 ? `1px solid ${cat.color}14` : "none" }}
+                                >
+                                  <div
+                                    className="shrink-0 flex items-center justify-center"
+                                    style={{ width: 32, height: 32, borderRadius: 8, background: `${cat.color}18`, fontSize: 15 }}
+                                  >
+                                    {cat.emoji}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="type-body truncate" style={{ fontWeight: 500, fontSize: 13 }}>
+                                      {t.merchant_name ?? t.name}
+                                    </p>
+                                    <p className="type-small" style={{ color: "var(--text-tertiary)" }}>{t.date}</p>
+                                  </div>
+                                  <span
+                                    className="type-small shrink-0"
+                                    style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
+                                  >
+                                    −${t.amount.toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+
+                {/* Show more / less */}
                 {categoryBreakdown.length > 8 && (
-                  <div
-                    className="px-5 py-3 flex items-center justify-between"
-                    style={{ borderTop: "1px solid var(--border-subtle)" }}
+                  <button
+                    onClick={() => setShowAllCategories(s => !s)}
+                    className="w-full px-5 py-3 flex items-center justify-between transition-colors duration-100"
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      borderTop: "1px solid var(--border-subtle)",
+                      cursor: "pointer",
+                    }}
                   >
-                    <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
-                      +{categoryBreakdown.length - 8} more categories
+                    <span className="type-small" style={{ color: "var(--accent)", fontWeight: 500 }}>
+                      {showAllCategories
+                        ? "Show less"
+                        : `Show ${categoryBreakdown.length - 8} more categories`}
                     </span>
-                    <span className="type-small" style={{ color: "var(--text-tertiary)", fontVariantNumeric: "tabular-nums" }}>
-                      ${categoryBreakdown.slice(8).reduce((s, c) => s + c.total, 0).toFixed(2)}
-                    </span>
-                  </div>
+                    {!showAllCategories && (
+                      <span className="type-small" style={{ color: "var(--text-tertiary)", fontVariantNumeric: "tabular-nums" }}>
+                        ${categoryBreakdown.slice(8).reduce((s, c) => s + c.total, 0).toFixed(2)}
+                      </span>
+                    )}
+                  </button>
                 )}
               </div>
             </motion.div>
