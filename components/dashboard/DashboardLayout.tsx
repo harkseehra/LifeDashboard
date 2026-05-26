@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { QuickCapture } from "./QuickCapture";
 import { TasksSection } from "./TasksSection";
 import { AppointmentsSection } from "./AppointmentsSection";
-import { PurchasesStub } from "./PurchasesStub";
+import { PurchasesSection } from "./PurchasesSection";
 import { addTask, completeTask } from "@/lib/tasks";
 import { addAppointment } from "@/lib/appointments";
 import { addGoal } from "@/lib/goals";
@@ -130,7 +130,7 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
           </div>
           <div className="lg:col-span-2 flex flex-col gap-6">
             <AppointmentsSection appointments={appointments} />
-            <PurchasesStub />
+            <PurchasesSection />
           </div>
         </motion.div>
       </motion.div>
