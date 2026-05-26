@@ -269,9 +269,6 @@ export default function PurchasesPage() {
               <p className="type-body" style={{ fontWeight: 500 }}>No banks connected</p>
               <p className="type-small mt-1">Connect your bank to see spending automatically.</p>
             </div>
-            <p className="type-small" style={{ color: "var(--text-tertiary)" }}>
-              Sandbox: use <code style={{ background: "var(--bg-card-hover)", padding: "1px 5px", borderRadius: 4 }}>user_good</code> / <code style={{ background: "var(--bg-card-hover)", padding: "1px 5px", borderRadius: 4 }}>pass_good</code>
-            </p>
           </motion.div>
         )}
 
