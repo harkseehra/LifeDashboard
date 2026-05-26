@@ -402,7 +402,9 @@ export default function PurchasesPage() {
 
   const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
   const expenses = sorted.filter(t => t.amount > 0 && !t.pending);
+  const income = sorted.filter(t => t.amount < 0 && !t.pending);
   const totalSpend = expenses.reduce((s, t) => s + t.amount, 0);
+  const totalIncome = income.reduce((s, t) => s + Math.abs(t.amount), 0);
 
   const depositAccounts = accounts.filter(a => a.type === "depository");
   const totalBalance = depositAccounts.reduce((s, a) => s + a.balance_current, 0);
@@ -727,6 +729,58 @@ export default function PurchasesPage() {
             </div>
           </motion.div>
         )}
+
+        {/* Income */}
+        <AnimatePresence mode="wait">
+          {!loading && income.length > 0 && (
+            <motion.div
+              key={`income-${days}`}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              transition={spring}
+              className="flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="type-section">Income</h2>
+                <span className="type-small" style={{ color: "var(--accent-success)", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                  +${totalIncome.toFixed(2)}
+                </span>
+              </div>
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                {income.map((t, i) => (
+                  <motion.div
+                    key={t.transaction_id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ ...micro, delay: Math.min(i * 0.012, 0.25) }}
+                    className="flex items-center gap-4 px-5 py-3.5"
+                    style={{ borderBottom: i < income.length - 1 ? "1px solid var(--border-subtle)" : "none" }}
+                  >
+                    <div
+                      className="shrink-0 flex items-center justify-center"
+                      style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(52,199,89,0.12)", fontSize: 20 }}
+                    >
+                      💰
+                    </div>
+                    <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                      <span className="type-body truncate" style={{ fontWeight: 500 }}>
+                        {t.merchant_name ?? t.name}
+                      </span>
+                      <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
+                        {t.date} · {t.institution_name}
+                      </span>
+                    </div>
+                    <span className="type-body shrink-0" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", color: "var(--accent-success)" }}>
+                      +${Math.abs(t.amount).toFixed(2)}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Transactions */}
         <AnimatePresence mode="wait">
