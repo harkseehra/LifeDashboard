@@ -1,25 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { format, parseISO, isToday, isPast, isTomorrow } from "date-fns";
 import type { Task } from "@/lib/types";
 
 interface TaskRowProps {
   task: Task;
   onComplete: (id: string) => void;
+  onEdit?: (id: string, title: string, due_date: string | null) => void;
+  onDelete?: (id: string) => void;
   showDivider?: boolean;
 }
 
-export function TaskRow({ task, onComplete, showDivider = true }: TaskRowProps) {
+export function TaskRow({
+  task,
+  onComplete,
+  onEdit,
+  onDelete,
+  showDivider = true,
+}: TaskRowProps) {
   const [phase, setPhase] = useState<"idle" | "striking" | "fading">("idle");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [hovered, setHovered] = useState(false);
 
   const handleCheck = () => {
     if (phase !== "idle") return;
     setPhase("striking");
-    // Begin fade-out after strikethrough settles
     setTimeout(() => setPhase("fading"), 200);
-    // Notify parent to remove after full animation
     setTimeout(() => onComplete(task.id), 600);
   };
 
@@ -38,6 +47,38 @@ export function TaskRow({ task, onComplete, showDivider = true }: TaskRowProps) 
   })();
 
   const completing = phase !== "idle";
+
+  const saveEdit = () => {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== task.title && onEdit) {
+      onEdit(task.id, trimmed, task.due_date);
+    } else if (!trimmed) {
+      setEditTitle(task.title);
+    }
+    setIsEditing(false);
+  };
+
+  const handleTitleClick = () => {
+    if (completing) return;
+    setIsEditing(true);
+    setEditTitle(task.title);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      saveEdit();
+    } else if (e.key === "Escape") {
+      setEditTitle(task.title);
+      setIsEditing(false);
+    }
+  };
+
+  const handleBlur = () => {
+    saveEdit();
+  };
+
+  const showTrash =
+    hovered && !isEditing && !completing && onDelete !== undefined;
 
   return (
     <div
@@ -58,6 +99,8 @@ export function TaskRow({ task, onComplete, showDivider = true }: TaskRowProps) 
           paddingBottom: 13,
           borderBottom: showDivider ? "1px solid var(--border-subtle)" : "none",
         }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
         {/* Checkbox */}
         <button
@@ -74,32 +117,79 @@ export function TaskRow({ task, onComplete, showDivider = true }: TaskRowProps) 
           {completing && <Check size={10} color="white" strokeWidth={3} />}
         </button>
 
-        {/* Title + strikethrough overlay */}
-        <span className="flex-1 relative type-body" style={{ color: completing ? "var(--text-tertiary)" : "var(--text-primary)" }}>
-          {task.title}
-          {completing && (
-            <span
-              className="absolute left-0 top-1/2 h-px -translate-y-1/2 bg-current"
-              style={{ animation: "strikethrough 200ms ease forwards" }}
+        {/* Title area */}
+        <div className="flex-1 relative" style={{ minWidth: 0 }}>
+          {isEditing ? (
+            <input
+              autoFocus
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onBlur={handleBlur}
+              className="w-full type-body"
+              style={{
+                background: "transparent",
+                border: "none",
+                borderBottom: "1.5px solid var(--accent)",
+                outline: "none",
+                color: "var(--text-primary)",
+                fontFamily: "inherit",
+                padding: 0,
+                margin: 0,
+              }}
             />
+          ) : (
+            <span
+              className="type-body"
+              onClick={handleTitleClick}
+              style={{
+                color: completing ? "var(--text-tertiary)" : "var(--text-primary)",
+                cursor: completing ? "default" : "text",
+                display: "block",
+              }}
+            >
+              {task.title}
+              {completing && (
+                <span
+                  className="absolute left-0 top-1/2 h-px -translate-y-1/2 bg-current"
+                  style={{ animation: "strikethrough 200ms ease forwards" }}
+                />
+              )}
+            </span>
           )}
-        </span>
+        </div>
 
-        {/* Due date pill */}
-        {duePill && (
-          <span
-            className="type-caption shrink-0 px-2 py-0.5 rounded-full"
-            style={{
-              background: duePill.overdue
-                ? "rgba(255, 59, 48, 0.10)"
-                : "var(--bg-card-hover)",
-              color: duePill.overdue
-                ? "var(--accent-overdue)"
-                : "var(--text-tertiary)",
+        {/* Right side: trash or due date pill */}
+        {showTrash ? (
+          <button
+            onClick={() => onDelete!(task.id)}
+            className="btn-icon-ghost shrink-0"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--accent-overdue)";
             }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }}
+            aria-label={`Delete: ${task.title}`}
           >
-            {duePill.label}
-          </span>
+            <Trash2 size={13} />
+          </button>
+        ) : (
+          duePill && (
+            <span
+              className="type-caption shrink-0 px-2 py-0.5 rounded-full"
+              style={{
+                background: duePill.overdue
+                  ? "rgba(255, 59, 48, 0.10)"
+                  : "var(--bg-card-hover)",
+                color: duePill.overdue
+                  ? "var(--accent-overdue)"
+                  : "var(--text-tertiary)",
+              }}
+            >
+              {duePill.label}
+            </span>
+          )
         )}
       </div>
     </div>

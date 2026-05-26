@@ -1,5 +1,5 @@
 import { createClient } from "./supabase";
-import type { Task, NewTask } from "./types";
+import type { Task, NewTask, Priority } from "./types";
 
 export async function addTask(
   task: NewTask
@@ -53,5 +53,14 @@ export async function deleteTask(
 ): Promise<{ error: string | null }> {
   const supabase = createClient();
   const { error } = await supabase.from("tasks").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+export async function updateTask(
+  id: string,
+  updates: { title?: string; due_date?: string | null; priority?: Priority }
+): Promise<{ error: string | null }> {
+  const supabase = createClient();
+  const { error } = await supabase.from("tasks").update(updates).eq("id", id);
   return { error: error?.message ?? null };
 }

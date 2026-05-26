@@ -11,7 +11,7 @@ import {
 import { ChevronLeft, ChevronRight, MapPin, X, Trash2, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { addAppointment, deleteAppointment } from "@/lib/appointments";
-import { spring, springGentle, micro } from "@/lib/animations";
+import { spring, springGentle, micro, fadeUp, staggerParent } from "@/lib/animations";
 import type { Appointment, NewAppointment } from "@/lib/types";
 
 // ── Mini calendar (left panel) ─────────────────────────────────────────────
@@ -55,10 +55,10 @@ function MiniCalendar({
           {format(currentMonth, "MMMM yyyy")}
         </span>
         <div className="flex items-center gap-0.5">
-          <button onClick={onPrevMonth} className="btn-icon-ghost" style={{ borderRadius: "50%" }} aria-label="Previous month">
+          <button onClick={onPrevMonth} className="btn-icon" style={{ borderRadius: "50%", background: "var(--bg-card-hover)" }} aria-label="Previous month">
             <ChevronLeft size={14} />
           </button>
-          <button onClick={onNextMonth} className="btn-icon-ghost" style={{ borderRadius: "50%" }} aria-label="Next month">
+          <button onClick={onNextMonth} className="btn-icon" style={{ borderRadius: "50%", background: "var(--bg-card-hover)" }} aria-label="Next month">
             <ChevronRight size={14} />
           </button>
         </div>
@@ -485,15 +485,21 @@ export default function CalendarPage() {
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
-      <div style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}>
-        <div className="mb-6">
+      <motion.div
+        className="flex flex-col gap-8"
+        style={{ padding: "var(--page-top) var(--page-gutter) 60px" }}
+        variants={staggerParent}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div variants={fadeUp} transition={spring}>
           <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
             ← Dashboard
           </Link>
-        </div>
+        </motion.div>
 
         {/* Two-panel layout */}
-        <div className="flex gap-8 items-start">
+        <motion.div variants={fadeUp} transition={spring} className="flex gap-8 items-start">
           {/* Left: mini calendar */}
           <div
             className="card px-5 py-5 shrink-0"
@@ -523,8 +529,8 @@ export default function CalendarPage() {
             onDelete={handleDelete}
             onAdd={() => setShowAddModal(true)}
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       <AnimatePresence>
         {showAddModal && (

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { Reorder } from "framer-motion";
 import Link from "next/link";
 import { parseISO, isPast, isToday, format } from "date-fns";
 import { createClient } from "@/lib/supabase";
-import { completeTask, uncompleteTask } from "@/lib/tasks";
+import { completeTask, uncompleteTask, deleteTask, updateTask } from "@/lib/tasks";
 import { TaskRow } from "@/components/dashboard/TaskRow";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
 import type { Task } from "@/lib/types";
@@ -96,6 +97,18 @@ export default function TasksPage() {
     await uncompleteTask(id);
   };
 
+  const handleDelete = async (id: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== id));
+    await deleteTask(id);
+  };
+
+  const handleEdit = async (id: string, title: string, due_date: string | null) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, title, due_date } : t))
+    );
+    await updateTask(id, { title, due_date });
+  };
+
   const visible = applySort(applyFilter(tasks, filter), sort);
 
   return (
@@ -181,6 +194,34 @@ export default function TasksPage() {
                  filter === "completed" ? "Nothing completed yet." : "No tasks yet."}
               </p>
             </div>
+          ) : filter === "todo" ? (
+            <Reorder.Group
+              axis="y"
+              values={visible}
+              onReorder={(newOrder) => {
+                setTasks((prev) => {
+                  const visibleIds = new Set(visible.map((t) => t.id));
+                  const nonVisible = prev.filter((t) => !visibleIds.has(t.id));
+                  return [...newOrder, ...nonVisible];
+                });
+              }}
+              as="div"
+              className="card"
+              style={{ padding: 0, overflow: "hidden", listStyle: "none", margin: 0 }}
+            >
+              {visible.map((task, i) => (
+                <Reorder.Item key={task.id} value={task} as="div" style={{ listStyle: "none" }}>
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onComplete={handleComplete}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    showDivider={i < visible.length - 1}
+                  />
+                </Reorder.Item>
+              ))}
+            </Reorder.Group>
           ) : (
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               {visible.map((task, i) =>
