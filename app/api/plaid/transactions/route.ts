@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { plaidClient } from "@/lib/plaid";
 import { createApiClient } from "@/lib/supabase-server";
 import { format, subDays } from "date-fns";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createApiClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -16,7 +16,9 @@ export async function GET() {
 
     if (!items || items.length === 0) return NextResponse.json({ transactions: [] });
 
-    const startDate = format(subDays(new Date(), 30), "yyyy-MM-dd");
+    const daysParam = parseInt(request.nextUrl.searchParams.get("days") ?? "30", 10);
+    const days = [30, 60, 90].includes(daysParam) ? daysParam : 30;
+    const startDate = format(subDays(new Date(), days), "yyyy-MM-dd");
     const endDate = format(new Date(), "yyyy-MM-dd");
 
     const allTransactions = await Promise.all(

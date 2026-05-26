@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePlaidLink } from "react-plaid-link";
 import { RefreshCw, Trash2, AlertCircle, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { fadeUp, staggerParent, spring, micro } from "@/lib/animations";
+import { fadeUp, staggerParent, spring, micro, springGentle } from "@/lib/animations";
 
 // Maps both legacy ("Food and Drink") and new PFC codes ("FOOD_AND_DRINK")
 const CATEGORY_MAP: Record<string, { emoji: string; color: string }> = {
@@ -106,17 +106,14 @@ function getCategoryInfo(
   pfcPrimary: string | null,
   pfcDetailed: string | null,
 ): { emoji: string; color: string; label: string } {
-  // 1. Try new PFC detailed code (most specific)
   if (pfcDetailed && CATEGORY_MAP[pfcDetailed]) {
     const label = pfcPrimary?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) ?? "Other";
     return { ...CATEGORY_MAP[pfcDetailed], label };
   }
-  // 2. Try new PFC primary code
   if (pfcPrimary && CATEGORY_MAP[pfcPrimary]) {
     const label = pfcPrimary.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
     return { ...CATEGORY_MAP[pfcPrimary], label };
   }
-  // 3. Try legacy category array (most specific first)
   if (cats && cats.length > 0) {
     for (const c of [...cats].reverse()) {
       if (CATEGORY_MAP[c]) return { ...CATEGORY_MAP[c], label: cats[0] };
@@ -126,7 +123,6 @@ function getCategoryInfo(
   return { emoji: "💳", color: "#8E8E93", label: "Other" };
 }
 
-// Account type → emoji
 function accountEmoji(type: string, subtype: string | null): string {
   if (subtype === "checking") return "🏦";
   if (subtype === "savings") return "💰";
@@ -167,6 +163,15 @@ interface PlaidItem {
   id: string;
   institution_name: string;
   created_at: string;
+}
+
+interface CategoryBreakdown {
+  label: string;
+  emoji: string;
+  color: string;
+  total: number;
+  count: number;
+  pct: number;
 }
 
 // ── Connect Bank button ────────────────────────────────────────────────────
@@ -227,9 +232,8 @@ function ConnectBankButton({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────
+// ── AI cache ───────────────────────────────────────────────────────────────
 
-// AI category cache — persisted in localStorage
 const AI_CACHE_KEY = "ld_tx_categories";
 
 function loadCache(): Record<string, { emoji: string; label: string }> {
@@ -239,7 +243,6 @@ function saveCache(c: Record<string, { emoji: string; label: string }>) {
   try { localStorage.setItem(AI_CACHE_KEY, JSON.stringify(c)); } catch { /* ignore */ }
 }
 
-// Label → color for AI categories
 const LABEL_COLOR: Record<string, string> = {
   Food: "#FF9500", Coffee: "#A0522D", Groceries: "#34C759",
   Gas: "#34C759", Transport: "#34C759", Travel: "#5AC8FA",
@@ -250,6 +253,16 @@ const LABEL_COLOR: Record<string, string> = {
   Other: "#8E8E93",
 };
 
+// ── Period options ─────────────────────────────────────────────────────────
+
+const PERIODS = [
+  { label: "30 days", days: 30 },
+  { label: "60 days", days: 60 },
+  { label: "90 days", days: 90 },
+] as const;
+
+// ── Page ───────────────────────────────────────────────────────────────────
+
 export default function PurchasesPage() {
   const [transactions, setTransactions] = useState<PlaidTransaction[]>([]);
   const [accounts, setAccounts] = useState<PlaidAccount[]>([]);
@@ -258,6 +271,8 @@ export default function PurchasesPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiCategories, setAiCategories] = useState<Record<string, { emoji: string; label: string }>>({});
+  const [days, setDays] = useState<30 | 60 | 90>(30);
+  const [periodLoading, setPeriodLoading] = useState(false);
   const categorizingRef = useRef(false);
 
   const categorizeWithAI = useCallback(async (txs: PlaidTransaction[]) => {
@@ -286,8 +301,9 @@ export default function PurchasesPage() {
     }
   }, []);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (d: number, showFullLoad = false) => {
     setError(null);
+    if (showFullLoad) setLoading(true);
     setAiCategories(loadCache());
     const supabase = createClient();
     const { data: itemData } = await supabase
@@ -297,7 +313,7 @@ export default function PurchasesPage() {
     setItems((itemData as PlaidItem[]) ?? []);
 
     const [txRes, acctRes] = await Promise.all([
-      fetch("/api/plaid/transactions"),
+      fetch(`/api/plaid/transactions?days=${d}`),
       fetch("/api/plaid/accounts"),
     ]);
 
@@ -315,26 +331,58 @@ export default function PurchasesPage() {
 
     setLoading(false);
     setRefreshing(false);
+    setPeriodLoading(false);
   }, [categorizeWithAI]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(30, true); }, [loadData]);
 
-  const handleRefresh = async () => { setRefreshing(true); await loadData(); };
+  const handlePeriodChange = (newDays: 30 | 60 | 90) => {
+    if (newDays === days || periodLoading) return;
+    setDays(newDays);
+    setPeriodLoading(true);
+    loadData(newDays, false);
+  };
+
+  const handleRefresh = async () => { setRefreshing(true); await loadData(days, false); };
 
   const handleDisconnect = async (id: string) => {
     const supabase = createClient();
     await supabase.from("plaid_items").delete().eq("id", id);
     setItems(prev => prev.filter(i => i.id !== id));
-    await loadData();
+    await loadData(days, false);
   };
 
   const sorted = [...transactions].sort((a, b) => b.date.localeCompare(a.date));
-  const totalSpend = sorted.filter(t => t.amount > 0 && !t.pending).reduce((s, t) => s + t.amount, 0);
+  const expenses = sorted.filter(t => t.amount > 0 && !t.pending);
+  const totalSpend = expenses.reduce((s, t) => s + t.amount, 0);
 
-  // Net balance across all depository accounts
   const depositAccounts = accounts.filter(a => a.type === "depository");
   const totalBalance = depositAccounts.reduce((s, a) => s + a.balance_current, 0);
   const currency = accounts[0]?.iso_currency_code ?? "CAD";
+
+  // ── Category breakdown ────────────────────────────────────────────────────
+  const categoryBreakdown: CategoryBreakdown[] = (() => {
+    const map = new Map<string, { emoji: string; color: string; total: number; count: number }>();
+    for (const t of expenses) {
+      const ai = aiCategories[t.transaction_id];
+      const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
+      const label = ai?.label ?? fallback.label;
+      const emoji = ai?.emoji ?? fallback.emoji;
+      const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;
+      const existing = map.get(label);
+      if (existing) {
+        existing.total += t.amount;
+        existing.count += 1;
+      } else {
+        map.set(label, { emoji, color, total: t.amount, count: 1 });
+      }
+    }
+    const entries = Array.from(map.entries())
+      .map(([label, v]) => ({ label, ...v, pct: 0 }))
+      .sort((a, b) => b.total - a.total);
+    const max = entries[0]?.total ?? 1;
+    return entries.map(e => ({ ...e, pct: (e.total / max) * 100 }));
+  })();
 
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-base)" }}>
@@ -351,22 +399,46 @@ export default function PurchasesPage() {
         </motion.div>
 
         {/* Header */}
-        <motion.div variants={fadeUp} transition={spring} className="flex items-end justify-between">
+        <motion.div variants={fadeUp} transition={spring} className="flex items-end justify-between gap-4 flex-wrap">
           <div>
             <h1 className="type-display">Purchases</h1>
             {!loading && transactions.length > 0 && (
               <p className="type-small mt-1" style={{ color: "var(--text-tertiary)" }}>
-                Last 30 days · ${totalSpend.toFixed(2)} spent
+                Last {days} days · ${totalSpend.toFixed(2)} spent
               </p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Period selector */}
+            <div
+              className="flex items-center gap-1 p-1 rounded-[10px]"
+              style={{ background: "var(--bg-card)", border: "1px solid var(--border-card)" }}
+            >
+              {PERIODS.map(({ label, days: d }) => (
+                <button
+                  key={d}
+                  onClick={() => handlePeriodChange(d)}
+                  className="type-small rounded-[7px] transition-all duration-150"
+                  style={{
+                    padding: "4px 10px",
+                    fontWeight: 500,
+                    background: days === d ? "var(--accent)" : "transparent",
+                    color: days === d ? "#fff" : "var(--text-secondary)",
+                    border: "none",
+                    cursor: "pointer",
+                    opacity: periodLoading && days !== d ? 0.5 : 1,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             {items.length > 0 && (
               <button onClick={handleRefresh} disabled={refreshing} className="btn-icon" style={{ borderRadius: "50%" }} aria-label="Refresh">
                 <RefreshCw size={14} style={{ opacity: refreshing ? 0.4 : 1, transition: "opacity 150ms" }} />
               </button>
             )}
-            <ConnectBankButton onSuccess={() => { setLoading(true); loadData(); }} />
+            <ConnectBankButton onSuccess={() => { setLoading(true); loadData(days, true); }} />
           </div>
         </motion.div>
 
@@ -375,8 +447,6 @@ export default function PurchasesPage() {
           <motion.div variants={fadeUp} transition={spring} className="flex flex-col gap-3">
             <h2 className="type-section">Balances</h2>
             <div className="flex gap-3 overflow-x-auto" style={{ scrollbarWidth: "none", paddingBottom: 2 }}>
-
-              {/* Total balance summary card */}
               {depositAccounts.length > 1 && (
                 <div
                   className="card shrink-0 px-5 py-4 flex flex-col gap-1"
@@ -389,8 +459,6 @@ export default function PurchasesPage() {
                   <p className="type-small" style={{ color: "rgba(255,255,255,0.6)" }}>{currency} · {depositAccounts.length} accounts</p>
                 </div>
               )}
-
-              {/* Individual account cards */}
               {accounts.map((acct) => (
                 <motion.div
                   key={acct.account_id}
@@ -403,9 +471,7 @@ export default function PurchasesPage() {
                   <div className="flex items-center gap-2">
                     <span style={{ fontSize: 18 }}>{accountEmoji(acct.type, acct.subtype)}</span>
                     <div className="flex flex-col min-w-0">
-                      <p className="type-small truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>
-                        {acct.name}
-                      </p>
+                      <p className="type-small truncate" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{acct.name}</p>
                       <p className="type-caption truncate">{acct.institution_name}</p>
                     </div>
                   </div>
@@ -424,6 +490,92 @@ export default function PurchasesPage() {
             </div>
           </motion.div>
         )}
+
+        {/* Spending categories breakdown */}
+        <AnimatePresence mode="wait">
+          {!loading && categoryBreakdown.length > 0 && (
+            <motion.div
+              key={`categories-${days}`}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              transition={spring}
+              className="flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="type-section">Spending by category</h2>
+                <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
+                  {categoryBreakdown.length} categories
+                </span>
+              </div>
+
+              {/* Top categories — bar chart style */}
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                {categoryBreakdown.slice(0, 8).map((cat, i) => (
+                  <div
+                    key={cat.label}
+                    className="flex items-center gap-4 px-5 py-3.5"
+                    style={{ borderBottom: i < Math.min(categoryBreakdown.length, 8) - 1 ? "1px solid var(--border-subtle)" : "none" }}
+                  >
+                    {/* Emoji */}
+                    <div
+                      className="shrink-0 flex items-center justify-center"
+                      style={{
+                        width: 36, height: 36, borderRadius: 10,
+                        background: `${cat.color}18`,
+                        fontSize: 18, lineHeight: 1,
+                      }}
+                    >
+                      {cat.emoji}
+                    </div>
+
+                    {/* Category + bar */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="type-body" style={{ fontWeight: 500 }}>{cat.label}</span>
+                        <span className="type-body shrink-0" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                          ${cat.total.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="flex-1 rounded-full overflow-hidden"
+                          style={{ height: 4, background: "var(--bg-card-hover)" }}
+                        >
+                          <motion.div
+                            style={{ height: 4, background: cat.color, borderRadius: 9999 }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${cat.pct}%` }}
+                            transition={{ ...springGentle, delay: i * 0.04 }}
+                          />
+                        </div>
+                        <span className="type-small shrink-0" style={{ color: "var(--text-tertiary)", width: 32, textAlign: "right" }}>
+                          {cat.count}×
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Show all / collapsed rest */}
+                {categoryBreakdown.length > 8 && (
+                  <div
+                    className="px-5 py-3 flex items-center justify-between"
+                    style={{ borderTop: "1px solid var(--border-subtle)" }}
+                  >
+                    <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
+                      +{categoryBreakdown.length - 8} more categories
+                    </span>
+                    <span className="type-small" style={{ color: "var(--text-tertiary)", fontVariantNumeric: "tabular-nums" }}>
+                      ${categoryBreakdown.slice(8).reduce((s, c) => s + c.total, 0).toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Connected banks */}
         {items.length > 0 && (
@@ -485,6 +637,7 @@ export default function PurchasesPage() {
                 <div key={i} className="skeleton shrink-0 rounded-[14px]" style={{ width: w, height: 96 }} />
               ))}
             </div>
+            <div className="skeleton rounded-[14px]" style={{ height: 320 }} />
             <div className="card" style={{ padding: 0, overflow: "hidden" }}>
               {[1,2,3,4,5].map(i => (
                 <div key={i} className="flex items-center gap-4 px-5 py-4" style={{ borderBottom: i < 5 ? "1px solid var(--border-subtle)" : "none" }}>
@@ -500,70 +653,95 @@ export default function PurchasesPage() {
           </motion.div>
         )}
 
-        {/* Transactions */}
-        {!loading && sorted.length > 0 && (
-          <motion.div variants={fadeUp} transition={spring} className="flex flex-col gap-3">
-            <h2 className="type-section">Transactions</h2>
-            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-              <AnimatePresence initial={false}>
-                {sorted.map((t, i) => {
-                  const ai = aiCategories[t.transaction_id];
-                  const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
-                  const emoji = ai?.emoji ?? fallback.emoji;
-                  const label = ai?.label ?? fallback.label;
-                  const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;
-                  return (
-                    <motion.div
-                      key={t.transaction_id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ ...micro, delay: Math.min(i * 0.012, 0.3) }}
-                      className="flex items-center gap-4 px-5 py-3.5"
-                      style={{ borderBottom: i < sorted.length - 1 ? "1px solid var(--border-subtle)" : "none" }}
-                    >
-                      {/* Emoji icon */}
-                      <div
-                        className="shrink-0 flex items-center justify-center"
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 12,
-                          background: `${color}15`,
-                          fontSize: 20,
-                          lineHeight: 1,
-                        }}
-                      >
-                        {emoji}
-                      </div>
-
-                      {/* Name + meta */}
-                      <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                        <span className="type-body truncate" style={{ fontWeight: 500 }}>
-                          {t.merchant_name ?? t.name}
-                        </span>
-                        <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
-                          {label} · {t.date}{t.pending ? " · Pending" : ""}
-                        </span>
-                      </div>
-
-                      {/* Amount */}
-                      <span
-                        className="type-body shrink-0"
-                        style={{
-                          fontWeight: 600,
-                          fontVariantNumeric: "tabular-nums",
-                          color: t.amount < 0 ? "var(--accent-success)" : "var(--text-primary)",
-                        }}
-                      >
-                        {t.amount < 0 ? "+" : "−"}${Math.abs(t.amount).toFixed(2)}
-                      </span>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
+        {/* Period switching overlay */}
+        {periodLoading && !loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 pointer-events-none flex items-end justify-center pb-8 z-40"
+          >
+            <div
+              className="px-4 py-2.5 rounded-full type-small"
+              style={{
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-card)",
+                boxShadow: "var(--shadow-elevated)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              Loading {days} days…
             </div>
           </motion.div>
         )}
+
+        {/* Transactions */}
+        <AnimatePresence mode="wait">
+          {!loading && sorted.length > 0 && (
+            <motion.div
+              key={`transactions-${days}`}
+              variants={fadeUp}
+              initial="hidden"
+              animate="visible"
+              exit={{ opacity: 0 }}
+              transition={spring}
+              className="flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="type-section">Transactions</h2>
+                <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
+                  {sorted.length} transactions
+                </span>
+              </div>
+              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+                <AnimatePresence initial={false}>
+                  {sorted.map((t, i) => {
+                    const ai = aiCategories[t.transaction_id];
+                    const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
+                    const emoji = ai?.emoji ?? fallback.emoji;
+                    const label = ai?.label ?? fallback.label;
+                    const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;
+                    return (
+                      <motion.div
+                        key={t.transaction_id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ ...micro, delay: Math.min(i * 0.01, 0.25) }}
+                        className="flex items-center gap-4 px-5 py-3.5"
+                        style={{ borderBottom: i < sorted.length - 1 ? "1px solid var(--border-subtle)" : "none" }}
+                      >
+                        <div
+                          className="shrink-0 flex items-center justify-center"
+                          style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, fontSize: 20, lineHeight: 1 }}
+                        >
+                          {emoji}
+                        </div>
+                        <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                          <span className="type-body truncate" style={{ fontWeight: 500 }}>
+                            {t.merchant_name ?? t.name}
+                          </span>
+                          <span className="type-small" style={{ color: "var(--text-tertiary)" }}>
+                            {label} · {t.date}{t.pending ? " · Pending" : ""}
+                          </span>
+                        </div>
+                        <span
+                          className="type-body shrink-0"
+                          style={{
+                            fontWeight: 600,
+                            fontVariantNumeric: "tabular-nums",
+                            color: t.amount < 0 ? "var(--accent-success)" : "var(--text-primary)",
+                          }}
+                        >
+                          {t.amount < 0 ? "+" : "−"}${Math.abs(t.amount).toFixed(2)}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </main>
   );
