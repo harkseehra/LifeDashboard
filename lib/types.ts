@@ -60,3 +60,32 @@ export type GoalCheckIn = {
   notes: string | null;
   created_at: string;
 };
+
+export type WishlistItem = {
+  id: string;
+  user_id: string;
+  title: string;
+  estimated_cost: number;
+  priority: number;
+  notes: string | null;
+  emoji: string;
+  created_at: string;
+};
+
+export type SavingsAdvice = {
+  monthly_income: number;
+  monthly_expenses: number;
+  monthly_savings: number;
+  top_categories: { category: string; monthly_avg: number }[];
+  recurring_bills: { name: string; monthly_amount: number; cancellable: boolean }[];
+  wishlist_advice: {
+    id: string;
+    title: string;
+    cost: number;
+    months_current: number;
+    months_optimized: number;
+    message: string;
+  }[];
+  quick_wins: string[];
+  summary: string;
+};

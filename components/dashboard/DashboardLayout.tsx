@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { QuickCapture } from "./QuickCapture";
 import { TasksSection } from "./TasksSection";
 import { AppointmentsSection } from "./AppointmentsSection";
@@ -108,6 +109,37 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
         initial="hidden"
         animate="visible"
       >
+        <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-1">
+          {[
+            { href: "/goals", label: "Goals" },
+            { href: "/purchases", label: "Purchases" },
+            { href: "/wishlist", label: "Wishlist" },
+          ].map(({ href, label }) => (
+            <Link
+              key={href}
+              href={href}
+              className="type-small px-3 py-1.5 rounded-full transition-all duration-150"
+              style={{
+                color: "var(--text-secondary)",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border-card)",
+                textDecoration: "none",
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card-hover)";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card)";
+                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-secondary)";
+              }}
+            >
+              {label}
+            </Link>
+          ))}
+        </motion.div>
+
         <motion.div variants={fadeUp} transition={spring}>
           <QuickCapture
             onAddTask={handleAddTask}
