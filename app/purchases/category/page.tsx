@@ -139,20 +139,35 @@ function getCategoryInfo(cats: string[] | null, pfcPrimary: string | null, pfcDe
   return { emoji: "💳", color: "#8E8E93", label: "Other" };
 }
 
-function getNameOverride(name: string, merchantName: string | null): { emoji: string; color: string; label: string } | null {
+function getNameOverride(name: string, merchantName: string | null, amount?: number): { emoji: string; color: string; label: string } | null {
   const haystack = `${name} ${merchantName ?? ""}`.toLowerCase();
+  if (haystack.includes("presto")) return { emoji: "🚌", color: "#34C759", label: "Transportation" };
+  if (haystack.includes("fresco") || haystack.includes("walmart"))
+    return { emoji: "🥦", color: "#34C759", label: "Groceries" };
   if (haystack.includes("paypal")) return { emoji: "🅿️", color: "#003087", label: "PayPal" };
-  if (haystack.includes("interac") || haystack.includes("e-transfer") || haystack.includes("etransfer"))
+  if (haystack.includes("interac") || haystack.includes("e-transfer") || haystack.includes("etransfer")) {
+    if (amount !== undefined && amount >= 400) return { emoji: "🏠", color: "#8E8E93", label: "Rent & Utilities" };
     return { emoji: "🔁", color: "#FFCC00", label: "E-Transfer" };
+  }
   return null;
 }
 
+const CATEGORY_NORMALIZE: Record<string, { label: string; emoji: string; color: string }> = {
+  "Bank Fees":          { label: "Fees & Services", emoji: "🏦", color: "#636366" },
+  "General Services":   { label: "Fees & Services", emoji: "🏦", color: "#636366" },
+  "Rent And Utilities": { label: "Rent & Utilities", emoji: "🏠", color: "#8E8E93" },
+};
+
+function normalizeCategory(cat: { emoji: string; color: string; label: string }) {
+  return CATEGORY_NORMALIZE[cat.label] ?? cat;
+}
+
 function resolveCategory(t: PlaidTransaction, aiCache: Record<string, { emoji: string; label: string }>) {
-  const nameOverride = getNameOverride(t.name, t.merchant_name);
-  if (nameOverride) return nameOverride;
+  const nameOverride = getNameOverride(t.name, t.merchant_name, t.amount);
+  if (nameOverride) return normalizeCategory(nameOverride);
   const ai = aiCache[t.transaction_id];
-  if (ai) return { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label };
-  return getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
+  if (ai) return normalizeCategory({ emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label });
+  return normalizeCategory(getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed));
 }
 
 function loadCache(): Record<string, { emoji: string; label: string }> {

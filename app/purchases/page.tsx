@@ -123,19 +123,37 @@ function getCategoryInfo(
   return { emoji: "💳", color: "#8E8E93", label: "Other" };
 }
 
-// Detects PayPal and Interac e-transfers by transaction name — takes priority over everything else
+// Detects overrides by transaction name/merchant and amount — runs before AI and Plaid
 function getNameOverride(
   name: string,
   merchantName: string | null,
+  amount?: number,
 ): { emoji: string; color: string; label: string } | null {
   const haystack = `${name} ${merchantName ?? ""}`.toLowerCase();
+  // Transit cards
+  if (haystack.includes("presto")) return { emoji: "🚌", color: "#34C759", label: "Transportation" };
+  // Grocery stores
+  if (haystack.includes("fresco") || haystack.includes("walmart"))
+    return { emoji: "🥦", color: "#34C759", label: "Groceries" };
+  // PayPal (check before Interac so PayPal e-transfers don't fall through)
   if (haystack.includes("paypal")) return { emoji: "🅿️", color: "#003087", label: "PayPal" };
-  if (
-    haystack.includes("interac") ||
-    haystack.includes("e-transfer") ||
-    haystack.includes("etransfer")
-  ) return { emoji: "🔁", color: "#FFCC00", label: "E-Transfer" };
+  // Interac e-transfers: large amounts (>=400) treated as rent
+  if (haystack.includes("interac") || haystack.includes("e-transfer") || haystack.includes("etransfer")) {
+    if (amount !== undefined && amount >= 400) return { emoji: "🏠", color: "#8E8E93", label: "Rent & Utilities" };
+    return { emoji: "🔁", color: "#FFCC00", label: "E-Transfer" };
+  }
   return null;
+}
+
+// Normalise labels that should be merged or renamed
+const CATEGORY_NORMALIZE: Record<string, { label: string; emoji: string; color: string }> = {
+  "Bank Fees":        { label: "Fees & Services", emoji: "🏦", color: "#636366" },
+  "General Services": { label: "Fees & Services", emoji: "🏦", color: "#636366" },
+  "Rent And Utilities": { label: "Rent & Utilities", emoji: "🏠", color: "#8E8E93" },
+};
+
+function normalizeCategory(cat: { emoji: string; color: string; label: string }) {
+  return CATEGORY_NORMALIZE[cat.label] ?? cat;
 }
 
 function accountEmoji(type: string, subtype: string | null): string {
@@ -381,10 +399,10 @@ export default function PurchasesPage() {
   const categoryBreakdown: CategoryBreakdown[] = (() => {
     const map = new Map<string, { emoji: string; color: string; total: number; count: number; transactions: PlaidTransaction[] }>();
     for (const t of expenses) {
-      const nameOverride = getNameOverride(t.name, t.merchant_name);
+      const nameOverride = getNameOverride(t.name, t.merchant_name, t.amount);
       const ai = nameOverride ? null : aiCategories[t.transaction_id];
       const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
-      const resolved = nameOverride ?? (ai ? { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label } : fallback);
+      const resolved = normalizeCategory(nameOverride ?? (ai ? { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label } : fallback));
       const { label, emoji, color } = resolved;
       const existing = map.get(label);
       if (existing) {
@@ -718,10 +736,10 @@ export default function PurchasesPage() {
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
                 <AnimatePresence initial={false}>
                   {sorted.map((t, i) => {
-                    const nameOverride = getNameOverride(t.name, t.merchant_name);
+                    const nameOverride = getNameOverride(t.name, t.merchant_name, t.amount);
                     const ai = nameOverride ? null : aiCategories[t.transaction_id];
                     const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
-                    const resolved = nameOverride ?? (ai ? { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label } : fallback);
+                    const resolved = normalizeCategory(nameOverride ?? (ai ? { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label } : fallback));
                     const { emoji, label, color } = resolved;
                     return (
                       <motion.div
