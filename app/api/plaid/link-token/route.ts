@@ -17,7 +17,7 @@ export async function POST() {
       user: { client_user_id: user.id },
       client_name: "Life Dashboard",
       products: [Products.Transactions],
-      country_codes: [CountryCode.Us],
+      country_codes: [CountryCode.Ca, CountryCode.Us],
       language: "en",
     });
 
