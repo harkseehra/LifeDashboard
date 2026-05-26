@@ -8,88 +8,122 @@ import { RefreshCw, Trash2, AlertCircle, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { fadeUp, staggerParent, spring, micro } from "@/lib/animations";
 
-// ── Category → emoji + color ───────────────────────────────────────────────
-
+// Maps both legacy ("Food and Drink") and new PFC codes ("FOOD_AND_DRINK")
 const CATEGORY_MAP: Record<string, { emoji: string; color: string }> = {
-  // Food
-  "Food and Drink":               { emoji: "🍔", color: "#FF9500" },
-  "Restaurants":                  { emoji: "🍽️", color: "#FF9500" },
-  "Fast Food":                    { emoji: "🍟", color: "#FF9500" },
-  "Coffee Shop":                  { emoji: "☕", color: "#A0522D" },
-  "Bakeries":                     { emoji: "🥐", color: "#D2691E" },
-  "Bar":                          { emoji: "🍺", color: "#FF9500" },
-  "Breweries":                    { emoji: "🍻", color: "#FF9500" },
-  // Groceries
-  "Supermarkets and Groceries":   { emoji: "🥦", color: "#34C759" },
-  "Groceries":                    { emoji: "🥦", color: "#34C759" },
-  // Transport
-  "Transportation":               { emoji: "🚗", color: "#34C759" },
-  "Gas Stations":                 { emoji: "⛽", color: "#34C759" },
-  "Taxi":                         { emoji: "🚕", color: "#FFCC00" },
-  "Ride Share":                   { emoji: "🚗", color: "#34C759" },
-  "Parking":                      { emoji: "🅿️", color: "#5AC8FA" },
-  "Public Transportation":        { emoji: "🚌", color: "#34C759" },
-  // Travel
-  "Travel":                       { emoji: "✈️", color: "#5AC8FA" },
+  // ── New Plaid PFC primary codes ─────────────────────────────
+  FOOD_AND_DRINK:              { emoji: "🍔", color: "#FF9500" },
+  TRANSPORTATION:              { emoji: "🚗", color: "#34C759" },
+  TRAVEL:                      { emoji: "✈️", color: "#5AC8FA" },
+  SHOPPING:                    { emoji: "🛒", color: "#007AFF" },
+  GENERAL_MERCHANDISE:         { emoji: "🛍️", color: "#007AFF" },
+  ENTERTAINMENT:               { emoji: "🎬", color: "#AF52DE" },
+  MEDICAL:                     { emoji: "🏥", color: "#FF3B30" },
+  PERSONAL_CARE:               { emoji: "💆", color: "#FF3B30" },
+  RENT_AND_UTILITIES:          { emoji: "🏠", color: "#8E8E93" },
+  HOME_IMPROVEMENT:            { emoji: "🔧", color: "#8E8E93" },
+  GENERAL_SERVICES:            { emoji: "🔧", color: "#8E8E93" },
+  GOVERNMENT_AND_NON_PROFIT:   { emoji: "🏛️", color: "#8E8E93" },
+  INCOME:                      { emoji: "💰", color: "#34C759" },
+  TRANSFER_IN:                 { emoji: "💸", color: "#636366" },
+  TRANSFER_OUT:                { emoji: "💸", color: "#636366" },
+  LOAN_PAYMENTS:               { emoji: "📋", color: "#636366" },
+  BANK_FEES:                   { emoji: "🏦", color: "#636366" },
+  // ── New PFC detailed codes ───────────────────────────────────
+  FOOD_AND_DRINK_COFFEE:       { emoji: "☕", color: "#A0522D" },
+  FOOD_AND_DRINK_FAST_FOOD:    { emoji: "🍟", color: "#FF9500" },
+  FOOD_AND_DRINK_RESTAURANTS:  { emoji: "🍽️", color: "#FF9500" },
+  FOOD_AND_DRINK_GROCERIES:    { emoji: "🥦", color: "#34C759" },
+  FOOD_AND_DRINK_ALCOHOL_AND_BAR: { emoji: "🍺", color: "#FF9500" },
+  TRANSPORTATION_GAS_AND_CONVENIENCE: { emoji: "⛽", color: "#34C759" },
+  TRANSPORTATION_PARKING:      { emoji: "🅿️", color: "#5AC8FA" },
+  TRANSPORTATION_PUBLIC_TRANSIT: { emoji: "🚌", color: "#34C759" },
+  TRANSPORTATION_TAXIS_AND_RIDE_SHARES: { emoji: "🚕", color: "#FFCC00" },
+  TRAVEL_FLIGHTS:              { emoji: "✈️", color: "#5AC8FA" },
+  TRAVEL_HOTELS_AND_MOTELS:    { emoji: "🏨", color: "#5AC8FA" },
+  TRAVEL_CAR_RENTAL:           { emoji: "🚗", color: "#5AC8FA" },
+  ENTERTAINMENT_MUSIC_AND_AUDIO: { emoji: "🎵", color: "#AF52DE" },
+  ENTERTAINMENT_SPORTING_EVENTS: { emoji: "⚽", color: "#AF52DE" },
+  ENTERTAINMENT_TV_AND_MOVIES:  { emoji: "🎬", color: "#AF52DE" },
+  ENTERTAINMENT_VIDEO_GAMES:   { emoji: "🎮", color: "#AF52DE" },
+  SHOPPING_CLOTHING_AND_ACCESSORIES: { emoji: "👕", color: "#007AFF" },
+  SHOPPING_ELECTRONICS:        { emoji: "💻", color: "#007AFF" },
+  SHOPPING_SPORTING_GOODS:     { emoji: "⚽", color: "#007AFF" },
+  MEDICAL_PHARMACIES_AND_SUPPLEMENTS: { emoji: "💊", color: "#FF3B30" },
+  MEDICAL_GYMS_AND_FITNESS:    { emoji: "💪", color: "#FF3B30" },
+  RENT_AND_UTILITIES_TELEPHONE: { emoji: "📱", color: "#8E8E93" },
+  RENT_AND_UTILITIES_INTERNET:  { emoji: "🌐", color: "#8E8E93" },
+  RENT_AND_UTILITIES_RENT:      { emoji: "🏠", color: "#8E8E93" },
+  RENT_AND_UTILITIES_ELECTRICITY: { emoji: "💡", color: "#FFCC00" },
+  RENT_AND_UTILITIES_GAS:      { emoji: "🔥", color: "#FF9500" },
+  RENT_AND_UTILITIES_WATER:    { emoji: "💧", color: "#5AC8FA" },
+  INCOME_WAGES:                { emoji: "💼", color: "#34C759" },
+  INCOME_TAX_REFUND:           { emoji: "💰", color: "#34C759" },
+  // ── Legacy Plaid category strings ───────────────────────────
+  "Food and Drink":            { emoji: "🍔", color: "#FF9500" },
+  "Restaurants":               { emoji: "🍽️", color: "#FF9500" },
+  "Fast Food":                 { emoji: "🍟", color: "#FF9500" },
+  "Coffee Shop":               { emoji: "☕", color: "#A0522D" },
+  "Bakeries":                  { emoji: "🥐", color: "#D2691E" },
+  "Bar":                       { emoji: "🍺", color: "#FF9500" },
+  "Supermarkets and Groceries": { emoji: "🥦", color: "#34C759" },
+  "Groceries":                 { emoji: "🥦", color: "#34C759" },
+  "Transportation":            { emoji: "🚗", color: "#34C759" },
+  "Gas Stations":              { emoji: "⛽", color: "#34C759" },
+  "Taxi":                      { emoji: "🚕", color: "#FFCC00" },
+  "Parking":                   { emoji: "🅿️", color: "#5AC8FA" },
+  "Public Transportation":     { emoji: "🚌", color: "#34C759" },
+  "Travel":                    { emoji: "✈️", color: "#5AC8FA" },
   "Airlines and Aviation Services": { emoji: "✈️", color: "#5AC8FA" },
-  "Hotels":                       { emoji: "🏨", color: "#5AC8FA" },
-  "Car Rental":                   { emoji: "🚗", color: "#5AC8FA" },
-  "Vacation Rentals":             { emoji: "🏖️", color: "#5AC8FA" },
-  // Shopping
-  "Shopping":                     { emoji: "🛒", color: "#007AFF" },
-  "Clothing and Accessories":     { emoji: "👕", color: "#007AFF" },
-  "Electronics":                  { emoji: "💻", color: "#007AFF" },
-  "Sporting Goods":               { emoji: "⚽", color: "#007AFF" },
-  "Books and Magazines":          { emoji: "📚", color: "#007AFF" },
-  "Pet Supplies":                 { emoji: "🐾", color: "#007AFF" },
-  "Kids":                         { emoji: "👶", color: "#007AFF" },
-  "Pharmacies":                   { emoji: "💊", color: "#FF3B30" },
-  // Health
-  "Health":                       { emoji: "🏥", color: "#FF3B30" },
-  "Healthcare":                   { emoji: "🏥", color: "#FF3B30" },
-  "Gyms and Fitness Centers":     { emoji: "💪", color: "#FF3B30" },
-  "Dentists":                     { emoji: "🦷", color: "#FF3B30" },
-  "Doctors":                      { emoji: "👨‍⚕️", color: "#FF3B30" },
-  // Entertainment
-  "Entertainment":                { emoji: "🎬", color: "#AF52DE" },
-  "Movies and DVDs":              { emoji: "🎬", color: "#AF52DE" },
-  "Music":                        { emoji: "🎵", color: "#AF52DE" },
-  "Games":                        { emoji: "🎮", color: "#AF52DE" },
-  "Recreation":                   { emoji: "🎯", color: "#AF52DE" },
-  // Bills / Home
-  "Service":                      { emoji: "🔧", color: "#8E8E93" },
-  "Home":                         { emoji: "🏠", color: "#8E8E93" },
-  "Rent":                         { emoji: "🏠", color: "#8E8E93" },
-  "Utilities":                    { emoji: "💡", color: "#FFCC00" },
-  "Telecommunication Services":   { emoji: "📱", color: "#8E8E93" },
-  "Internet Services":            { emoji: "🌐", color: "#8E8E93" },
-  "Insurance":                    { emoji: "🛡️", color: "#8E8E93" },
-  "Subscription":                 { emoji: "🔄", color: "#8E8E93" },
-  // Finance
-  "Bank Charges":                 { emoji: "🏦", color: "#636366" },
-  "ATM":                          { emoji: "🏧", color: "#636366" },
-  "Transfer":                     { emoji: "💸", color: "#636366" },
-  "Payment":                      { emoji: "💳", color: "#636366" },
-  "Credit Card":                  { emoji: "💳", color: "#636366" },
-  "Tax":                          { emoji: "📋", color: "#636366" },
-  "Income":                       { emoji: "💰", color: "#34C759" },
-  "Payroll":                      { emoji: "💰", color: "#34C759" },
-  "Deposit":                      { emoji: "💰", color: "#34C759" },
-  "Interest Earned":              { emoji: "📈", color: "#34C759" },
-  // Education
-  "Education":                    { emoji: "📚", color: "#5AC8FA" },
-  // Charity
-  "Charity":                      { emoji: "❤️", color: "#FF3B30" },
-  "Government":                   { emoji: "🏛️", color: "#8E8E93" },
+  "Hotels":                    { emoji: "🏨", color: "#5AC8FA" },
+  "Shopping":                  { emoji: "🛒", color: "#007AFF" },
+  "Clothing and Accessories":  { emoji: "👕", color: "#007AFF" },
+  "Electronics":               { emoji: "💻", color: "#007AFF" },
+  "Health":                    { emoji: "🏥", color: "#FF3B30" },
+  "Healthcare":                { emoji: "🏥", color: "#FF3B30" },
+  "Gyms and Fitness Centers":  { emoji: "💪", color: "#FF3B30" },
+  "Pharmacies":                { emoji: "💊", color: "#FF3B30" },
+  "Entertainment":             { emoji: "🎬", color: "#AF52DE" },
+  "Music":                     { emoji: "🎵", color: "#AF52DE" },
+  "Games":                     { emoji: "🎮", color: "#AF52DE" },
+  "Service":                   { emoji: "🔧", color: "#8E8E93" },
+  "Home":                      { emoji: "🏠", color: "#8E8E93" },
+  "Utilities":                 { emoji: "💡", color: "#FFCC00" },
+  "Telecommunication Services": { emoji: "📱", color: "#8E8E93" },
+  "Internet Services":         { emoji: "🌐", color: "#8E8E93" },
+  "Insurance":                 { emoji: "🛡️", color: "#8E8E93" },
+  "Bank Charges":              { emoji: "🏦", color: "#636366" },
+  "Transfer":                  { emoji: "💸", color: "#636366" },
+  "Payment":                   { emoji: "💳", color: "#636366" },
+  "Tax":                       { emoji: "📋", color: "#636366" },
+  "Income":                    { emoji: "💰", color: "#34C759" },
+  "Payroll":                   { emoji: "💰", color: "#34C759" },
+  "Education":                 { emoji: "📚", color: "#5AC8FA" },
+  "Charity":                   { emoji: "❤️", color: "#FF3B30" },
 };
 
-function getCategoryInfo(cats: string[] | null): { emoji: string; color: string; label: string } {
-  if (!cats || cats.length === 0) return { emoji: "💳", color: "#8E8E93", label: "Other" };
-  // Try most specific first, then top-level
-  for (const c of [...cats].reverse()) {
-    if (CATEGORY_MAP[c]) return { ...CATEGORY_MAP[c], label: cats[0] };
+function getCategoryInfo(
+  cats: string[] | null,
+  pfcPrimary: string | null,
+  pfcDetailed: string | null,
+): { emoji: string; color: string; label: string } {
+  // 1. Try new PFC detailed code (most specific)
+  if (pfcDetailed && CATEGORY_MAP[pfcDetailed]) {
+    const label = pfcPrimary?.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase()) ?? "Other";
+    return { ...CATEGORY_MAP[pfcDetailed], label };
   }
-  return { emoji: "💳", color: "#8E8E93", label: cats[0] };
+  // 2. Try new PFC primary code
+  if (pfcPrimary && CATEGORY_MAP[pfcPrimary]) {
+    const label = pfcPrimary.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+    return { ...CATEGORY_MAP[pfcPrimary], label };
+  }
+  // 3. Try legacy category array (most specific first)
+  if (cats && cats.length > 0) {
+    for (const c of [...cats].reverse()) {
+      if (CATEGORY_MAP[c]) return { ...CATEGORY_MAP[c], label: cats[0] };
+    }
+    return { emoji: "💳", color: "#8E8E93", label: cats[0] };
+  }
+  return { emoji: "💳", color: "#8E8E93", label: "Other" };
 }
 
 // Account type → emoji
@@ -111,6 +145,8 @@ interface PlaidTransaction {
   amount: number;
   date: string;
   category: string[] | null;
+  pfc_primary: string | null;
+  pfc_detailed: string | null;
   institution_name: string;
   pending: boolean;
 }
@@ -472,7 +508,7 @@ export default function PurchasesPage() {
               <AnimatePresence initial={false}>
                 {sorted.map((t, i) => {
                   const ai = aiCategories[t.transaction_id];
-                  const fallback = getCategoryInfo(t.category);
+                  const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
                   const emoji = ai?.emoji ?? fallback.emoji;
                   const label = ai?.label ?? fallback.label;
                   const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;

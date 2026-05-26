@@ -28,7 +28,17 @@ export async function GET() {
           options: { count: 100, offset: 0 },
         });
         return res.data.transactions.map((t) => ({
-          ...t,
+          transaction_id: t.transaction_id,
+          name: t.name,
+          merchant_name: t.merchant_name ?? null,
+          amount: t.amount,
+          date: t.date,
+          // Legacy category array (may be null in newer API)
+          category: t.category ?? null,
+          // New personal_finance_category (primary code like FOOD_AND_DRINK)
+          pfc_primary: t.personal_finance_category?.primary ?? null,
+          pfc_detailed: t.personal_finance_category?.detailed ?? null,
+          pending: t.pending,
           institution_name: item.institution_name,
         }));
       })
@@ -36,7 +46,10 @@ export async function GET() {
 
     return NextResponse.json({ transactions: allTransactions.flat() });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to fetch transactions";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const plaidError = (err as { response?: { data?: { error_message?: string; error_code?: string } } })?.response?.data;
+    if (plaidError?.error_message) {
+      return NextResponse.json({ error: `${plaidError.error_code}: ${plaidError.error_message}` }, { status: 400 });
+    }
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to fetch transactions" }, { status: 500 });
   }
 }
