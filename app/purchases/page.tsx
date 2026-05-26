@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { usePlaidLink } from "react-plaid-link";
-import { RefreshCw, Trash2, AlertCircle, Plus } from "lucide-react";
+import { RefreshCw, Trash2, AlertCircle, Plus, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { fadeUp, staggerParent, spring, micro, springGentle } from "@/lib/animations";
 
@@ -121,6 +121,21 @@ function getCategoryInfo(
     return { emoji: "💳", color: "#8E8E93", label: cats[0] };
   }
   return { emoji: "💳", color: "#8E8E93", label: "Other" };
+}
+
+// Detects PayPal and Interac e-transfers by transaction name — takes priority over everything else
+function getNameOverride(
+  name: string,
+  merchantName: string | null,
+): { emoji: string; color: string; label: string } | null {
+  const haystack = `${name} ${merchantName ?? ""}`.toLowerCase();
+  if (haystack.includes("paypal")) return { emoji: "🅿️", color: "#003087", label: "PayPal" };
+  if (
+    haystack.includes("interac") ||
+    haystack.includes("e-transfer") ||
+    haystack.includes("etransfer")
+  ) return { emoji: "🔁", color: "#FFCC00", label: "E-Transfer" };
+  return null;
 }
 
 function accountEmoji(type: string, subtype: string | null): string {
@@ -274,7 +289,6 @@ export default function PurchasesPage() {
   const [aiCategories, setAiCategories] = useState<Record<string, { emoji: string; label: string }>>({});
   const [days, setDays] = useState<30 | 60 | 90>(30);
   const [periodLoading, setPeriodLoading] = useState(false);
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const categorizingRef = useRef(false);
 
@@ -367,11 +381,11 @@ export default function PurchasesPage() {
   const categoryBreakdown: CategoryBreakdown[] = (() => {
     const map = new Map<string, { emoji: string; color: string; total: number; count: number; transactions: PlaidTransaction[] }>();
     for (const t of expenses) {
-      const ai = aiCategories[t.transaction_id];
+      const nameOverride = getNameOverride(t.name, t.merchant_name);
+      const ai = nameOverride ? null : aiCategories[t.transaction_id];
       const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
-      const label = ai?.label ?? fallback.label;
-      const emoji = ai?.emoji ?? fallback.emoji;
-      const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;
+      const resolved = nameOverride ?? (ai ? { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label } : fallback);
+      const { label, emoji, color } = resolved;
       const existing = map.get(label);
       if (existing) {
         existing.total += t.amount;
@@ -515,125 +529,63 @@ export default function PurchasesPage() {
               </div>
 
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 8)).map((cat, i, arr) => {
-                  const isExpanded = expandedCategory === cat.label;
-                  const catTxs = [...cat.transactions].sort((a, b) => b.date.localeCompare(a.date));
-                  return (
-                    <div key={cat.label} style={{ borderBottom: i < arr.length - 1 || (categoryBreakdown.length > 8 && !showAllCategories) ? "1px solid var(--border-subtle)" : "none" }}>
-                      {/* Category row — clickable */}
-                      <button
-                        onClick={() => setExpandedCategory(isExpanded ? null : cat.label)}
-                        className="w-full flex items-center gap-4 px-5 py-3.5 transition-colors duration-100"
-                        style={{
-                          background: isExpanded ? "var(--bg-card-hover)" : "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          textAlign: "left",
-                        }}
-                      >
-                        {/* Emoji */}
-                        <div
-                          className="shrink-0 flex items-center justify-center"
-                          style={{ width: 36, height: 36, borderRadius: 10, background: `${cat.color}18`, fontSize: 18, lineHeight: 1 }}
-                        >
-                          {cat.emoji}
-                        </div>
-
-                        {/* Category + bar */}
-                        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="type-body" style={{ fontWeight: 500 }}>{cat.label}</span>
-                            <span className="type-body shrink-0" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                              ${cat.total.toFixed(2)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: "var(--bg-card-hover)" }}>
-                              <motion.div
-                                style={{ height: 4, background: cat.color, borderRadius: 9999 }}
-                                initial={{ width: 0 }}
-                                animate={{ width: `${cat.pct}%` }}
-                                transition={{ ...springGentle, delay: i * 0.04 }}
-                              />
-                            </div>
-                            <span className="type-small shrink-0" style={{ color: "var(--text-tertiary)", width: 32, textAlign: "right" }}>
-                              {cat.count}×
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Chevron */}
-                        <motion.svg
-                          width="14" height="14" viewBox="0 0 14 14" fill="none"
-                          animate={{ rotate: isExpanded ? 180 : 0 }}
-                          transition={micro}
-                          style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
-                        >
-                          <path d="M3 5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </motion.svg>
-                      </button>
-
-                      {/* Expanded transactions */}
-                      <AnimatePresence initial={false}>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={springGentle}
-                            style={{ overflow: "hidden" }}
-                          >
-                            <div style={{ borderTop: `1px solid ${cat.color}22`, background: `${cat.color}06` }}>
-                              {catTxs.map((t, j) => (
-                                <div
-                                  key={t.transaction_id}
-                                  className="flex items-center gap-3 px-5 py-3"
-                                  style={{ borderBottom: j < catTxs.length - 1 ? `1px solid ${cat.color}14` : "none" }}
-                                >
-                                  <div
-                                    className="shrink-0 flex items-center justify-center"
-                                    style={{ width: 32, height: 32, borderRadius: 8, background: `${cat.color}18`, fontSize: 15 }}
-                                  >
-                                    {cat.emoji}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="type-body truncate" style={{ fontWeight: 500, fontSize: 13 }}>
-                                      {t.merchant_name ?? t.name}
-                                    </p>
-                                    <p className="type-small" style={{ color: "var(--text-tertiary)" }}>{t.date}</p>
-                                  </div>
-                                  <span
-                                    className="type-small shrink-0"
-                                    style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
-                                  >
-                                    −${t.amount.toFixed(2)}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                {(showAllCategories ? categoryBreakdown : categoryBreakdown.slice(0, 8)).map((cat, i, arr) => (
+                  <Link
+                    key={cat.label}
+                    href={`/purchases/category?label=${encodeURIComponent(cat.label)}&days=${days}`}
+                    className="flex items-center gap-4 px-5 py-3.5 transition-colors duration-100"
+                    style={{
+                      borderBottom: i < arr.length - 1 || (categoryBreakdown.length > 8 && !showAllCategories) ? "1px solid var(--border-subtle)" : "none",
+                      textDecoration: "none",
+                      display: "flex",
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--bg-card-hover)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
+                    {/* Emoji */}
+                    <div
+                      className="shrink-0 flex items-center justify-center"
+                      style={{ width: 36, height: 36, borderRadius: 10, background: `${cat.color}18`, fontSize: 18, lineHeight: 1 }}
+                    >
+                      {cat.emoji}
                     </div>
-                  );
-                })}
+
+                    {/* Category + bar */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="type-body" style={{ fontWeight: 500, color: "var(--text-primary)" }}>{cat.label}</span>
+                        <span className="type-body shrink-0" style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", color: "var(--text-primary)" }}>
+                          ${cat.total.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: "var(--bg-card-hover)" }}>
+                          <motion.div
+                            style={{ height: 4, background: cat.color, borderRadius: 9999 }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${cat.pct}%` }}
+                            transition={{ ...springGentle, delay: i * 0.04 }}
+                          />
+                        </div>
+                        <span className="type-small shrink-0" style={{ color: "var(--text-tertiary)", width: 32, textAlign: "right" }}>
+                          {cat.count}×
+                        </span>
+                      </div>
+                    </div>
+
+                    <ChevronRight size={14} style={{ color: "var(--text-tertiary)", flexShrink: 0 }} />
+                  </Link>
+                ))}
 
                 {/* Show more / less */}
                 {categoryBreakdown.length > 8 && (
                   <button
                     onClick={() => setShowAllCategories(s => !s)}
-                    className="w-full px-5 py-3 flex items-center justify-between transition-colors duration-100"
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      borderTop: "1px solid var(--border-subtle)",
-                      cursor: "pointer",
-                    }}
+                    className="w-full px-5 py-3 flex items-center justify-between"
+                    style={{ background: "transparent", border: "none", borderTop: "1px solid var(--border-subtle)", cursor: "pointer" }}
                   >
                     <span className="type-small" style={{ color: "var(--accent)", fontWeight: 500 }}>
-                      {showAllCategories
-                        ? "Show less"
-                        : `Show ${categoryBreakdown.length - 8} more categories`}
+                      {showAllCategories ? "Show less" : `Show ${categoryBreakdown.length - 8} more categories`}
                     </span>
                     {!showAllCategories && (
                       <span className="type-small" style={{ color: "var(--text-tertiary)", fontVariantNumeric: "tabular-nums" }}>
@@ -766,11 +718,11 @@ export default function PurchasesPage() {
               <div className="card" style={{ padding: 0, overflow: "hidden" }}>
                 <AnimatePresence initial={false}>
                   {sorted.map((t, i) => {
-                    const ai = aiCategories[t.transaction_id];
+                    const nameOverride = getNameOverride(t.name, t.merchant_name);
+                    const ai = nameOverride ? null : aiCategories[t.transaction_id];
                     const fallback = getCategoryInfo(t.category, t.pfc_primary, t.pfc_detailed);
-                    const emoji = ai?.emoji ?? fallback.emoji;
-                    const label = ai?.label ?? fallback.label;
-                    const color = (ai ? LABEL_COLOR[ai.label] : null) ?? fallback.color;
+                    const resolved = nameOverride ?? (ai ? { emoji: ai.emoji, color: LABEL_COLOR[ai.label] ?? "#8E8E93", label: ai.label } : fallback);
+                    const { emoji, label, color } = resolved;
                     return (
                       <motion.div
                         key={t.transaction_id}
