@@ -101,31 +101,9 @@ const CATEGORY_MAP: Record<string, { emoji: string; color: string }> = {
   "Charity":                   { emoji: "❤️", color: "#FF3B30" },
 };
 
-// Maps PFC detailed codes to human-readable labels so groceries don't group under "Food And Drink"
+// Only override the label when the detailed code gives a meaningfully different grouping
 const PFC_DETAILED_LABELS: Record<string, string> = {
-  FOOD_AND_DRINK_GROCERIES:           "Groceries",
-  FOOD_AND_DRINK_COFFEE:              "Coffee",
-  FOOD_AND_DRINK_FAST_FOOD:           "Fast Food",
-  FOOD_AND_DRINK_RESTAURANTS:         "Restaurants",
-  FOOD_AND_DRINK_ALCOHOL_AND_BAR:     "Bars & Drinks",
-  TRANSPORTATION_GAS_AND_CONVENIENCE: "Gas",
-  TRANSPORTATION_PARKING:             "Parking",
-  TRANSPORTATION_PUBLIC_TRANSIT:      "Public Transit",
-  TRANSPORTATION_TAXIS_AND_RIDE_SHARES: "Ride Share",
-  TRAVEL_FLIGHTS:                     "Flights",
-  TRAVEL_HOTELS_AND_MOTELS:           "Hotels",
-  ENTERTAINMENT_TV_AND_MOVIES:        "Streaming",
-  ENTERTAINMENT_MUSIC_AND_AUDIO:      "Music",
-  ENTERTAINMENT_VIDEO_GAMES:          "Games",
-  SHOPPING_CLOTHING_AND_ACCESSORIES:  "Clothing",
-  SHOPPING_ELECTRONICS:               "Electronics",
-  MEDICAL_PHARMACIES_AND_SUPPLEMENTS: "Pharmacy",
-  MEDICAL_GYMS_AND_FITNESS:           "Gym & Fitness",
-  RENT_AND_UTILITIES_RENT:            "Rent",
-  RENT_AND_UTILITIES_TELEPHONE:       "Phone",
-  RENT_AND_UTILITIES_INTERNET:        "Internet",
-  RENT_AND_UTILITIES_ELECTRICITY:     "Electricity",
-  INCOME_WAGES:                       "Wages",
+  FOOD_AND_DRINK_GROCERIES: "Groceries",
 };
 
 function getCategoryInfo(
