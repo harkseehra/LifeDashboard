@@ -280,11 +280,19 @@ body {
   :root {
     --page-top: 24px;
     --page-gutter: 16px;
+    /* Bigger icon buttons for touch */
+    --btn-icon-sm: 36px;
+    --btn-icon-md: 40px;
   }
 
   /* Scale display heading down on small phones */
   .type-display {
     font-size: clamp(28px, 7vw, 40px);
+  }
+
+  /* Bump up tiny text for mobile readability */
+  .type-caption {
+    font-size: 11px;
   }
 
   /* Prevent iOS double-tap zoom on buttons */
@@ -297,4 +305,5 @@ body {
   .tap-row {
     min-height: 44px;
   }
+
 }

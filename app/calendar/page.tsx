@@ -40,7 +40,7 @@ function MiniCalendar({
     appointments.some((a) => isSameDay(parseISO(a.starts_at), day));
 
   return (
-    <div className="flex flex-col gap-3" style={{ width: 232, flexShrink: 0 }}>
+    <div className="flex flex-col gap-3 w-full sm:w-[232px] sm:shrink-0">
       {/* Month nav */}
       <div className="flex items-center justify-between">
         <span
@@ -71,7 +71,7 @@ function MiniCalendar({
             key={i}
             style={{
               textAlign: "center",
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 500,
               fontFamily: "inherit",
               color: "var(--text-tertiary)",
@@ -499,10 +499,10 @@ export default function CalendarPage() {
         </motion.div>
 
         {/* Two-panel layout */}
-        <motion.div variants={fadeUp} transition={spring} className="flex gap-8 items-start">
+        <motion.div variants={fadeUp} transition={spring} className="flex flex-col gap-4 sm:flex-row sm:gap-8 sm:items-start">
           {/* Left: mini calendar */}
           <div
-            className="card px-5 py-5 shrink-0"
+            className="card px-5 py-5 sm:shrink-0"
             style={{ position: "sticky", top: "var(--page-top)" }}
           >
             <MiniCalendar
