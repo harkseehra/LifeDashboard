@@ -57,7 +57,7 @@ interface GroupProps {
 }
 
 function TaskGroup({ label, tasks, onComplete, isFirst, collapsible = false }: GroupProps) {
-  const [collapsed, setCollapsed] = useState(collapsible);
+  const [collapsed, setCollapsed] = useState(false);
 
   if (tasks.length === 0) return null;
 

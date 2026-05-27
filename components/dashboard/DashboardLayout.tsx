@@ -7,6 +7,7 @@ import { QuickCapture } from "./QuickCapture";
 import { TasksSection } from "./TasksSection";
 import { AppointmentsSection } from "./AppointmentsSection";
 import { PurchasesSection } from "./PurchasesSection";
+import { DailyBrief } from "./DailyBrief";
 import { addTask, completeTask } from "@/lib/tasks";
 import { addAppointment } from "@/lib/appointments";
 import { addGoal } from "@/lib/goals";
@@ -138,6 +139,10 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
               {label}
             </Link>
           ))}
+        </motion.div>
+
+        <motion.div variants={fadeUp} transition={spring}>
+          <DailyBrief tasks={tasks} appointments={appointments} />
         </motion.div>
 
         <motion.div variants={fadeUp} transition={spring}>
