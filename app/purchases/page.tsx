@@ -382,7 +382,22 @@ export default function PurchasesPage() {
     setPeriodLoading(false);
   }, [categorizeWithAI]);
 
-  useEffect(() => { loadData(30, true); }, [loadData]);
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const refreshKey = `ld_plaid_refresh_${today}`;
+    if (!localStorage.getItem(refreshKey)) {
+      // Trigger Plaid sync once per day, wait briefly for it to propagate, then load
+      fetch("/api/plaid/refresh", { method: "POST" })
+        .then(() => {
+          localStorage.setItem(refreshKey, "1");
+          return new Promise<void>((r) => setTimeout(r, 2000));
+        })
+        .catch(() => {})
+        .finally(() => loadData(30, true));
+    } else {
+      loadData(30, true);
+    }
+  }, [loadData]);
 
   const handlePeriodChange = (newDays: 30 | 60 | 90) => {
     if (newDays === days || periodLoading) return;
