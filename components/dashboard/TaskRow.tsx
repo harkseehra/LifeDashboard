@@ -11,6 +11,7 @@ interface TaskRowProps {
   onEdit?: (id: string, title: string, due_date: string | null) => void;
   onDelete?: (id: string) => void;
   showDivider?: boolean;
+  emoji?: string;
 }
 
 export function TaskRow({
@@ -19,6 +20,7 @@ export function TaskRow({
   onEdit,
   onDelete,
   showDivider = true,
+  emoji,
 }: TaskRowProps) {
   const [phase, setPhase] = useState<"idle" | "striking" | "fading">("idle");
   const [isEditing, setIsEditing] = useState(false);
@@ -116,6 +118,21 @@ export function TaskRow({
         >
           {completing && <Check size={10} color="white" strokeWidth={3} />}
         </button>
+
+        {/* Task emoji */}
+        {emoji && !isEditing && (
+          <span
+            style={{
+              fontSize: 15,
+              lineHeight: 1,
+              flexShrink: 0,
+              opacity: completing ? 0.35 : 1,
+              transition: "opacity 300ms ease",
+            }}
+          >
+            {emoji}
+          </span>
+        )}
 
         {/* Title area */}
         <div className="flex-1 relative" style={{ minWidth: 0 }}>

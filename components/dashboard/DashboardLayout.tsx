@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { QuickCapture } from "./QuickCapture";
@@ -11,6 +11,7 @@ import { DailyBrief } from "./DailyBrief";
 import { addTask, completeTask } from "@/lib/tasks";
 import { addAppointment } from "@/lib/appointments";
 import { addGoal } from "@/lib/goals";
+import { loadTaskEmojis, saveTaskEmoji } from "@/lib/task-emojis";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
 import type { Task, Appointment } from "@/lib/types";
 
@@ -24,7 +25,12 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [toast, setToast] = useState<string | null>(null);
+  const [taskEmojis, setTaskEmojis] = useState<Record<string, string>>({});
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    setTaskEmojis(loadTaskEmojis());
+  }, []);
 
   const showToast = (msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -53,6 +59,20 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
       showToast("Couldn't save the task — check your connection and try again.");
     } else {
       setTasks((prev) => prev.map((t) => (t.id === tempId ? data : t)));
+      // Fetch emoji in background — don't await, fire and forget
+      fetch("/api/ai/task-emoji", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title }),
+      })
+        .then((r) => r.json())
+        .then(({ emoji }: { emoji: string | null }) => {
+          if (emoji) {
+            saveTaskEmoji(data.id, emoji);
+            setTaskEmojis((prev) => ({ ...prev, [data.id]: emoji }));
+          }
+        })
+        .catch(() => {});
     }
   };
 
@@ -163,7 +183,7 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
           transition={spring}
         >
           <div className="lg:col-span-3">
-            <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} />
+            <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} taskEmojis={taskEmojis} />
           </div>
           <div className="lg:col-span-2 flex flex-col gap-6">
             <AppointmentsSection appointments={appointments} />

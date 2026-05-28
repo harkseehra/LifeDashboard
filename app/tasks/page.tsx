@@ -7,6 +7,7 @@ import Link from "next/link";
 import { parseISO, isPast, isToday, format } from "date-fns";
 import { createClient } from "@/lib/supabase";
 import { completeTask, uncompleteTask, deleteTask, updateTask } from "@/lib/tasks";
+import { loadTaskEmojis } from "@/lib/task-emojis";
 import { TaskRow } from "@/components/dashboard/TaskRow";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
 import type { Task } from "@/lib/types";
@@ -64,8 +65,10 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("todo");
   const [sort, setSort] = useState<SortKey>("due_date");
+  const [taskEmojis, setTaskEmojis] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    setTaskEmojis(loadTaskEmojis());
     const supabase = createClient();
     supabase
       .from("tasks")
@@ -218,6 +221,7 @@ export default function TasksPage() {
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     showDivider={i < visible.length - 1}
+                    emoji={taskEmojis[task.id]}
                   />
                 </Reorder.Item>
               ))}
@@ -270,6 +274,7 @@ export default function TasksPage() {
                     task={task}
                     onComplete={handleComplete}
                     showDivider={i < visible.length - 1}
+                    emoji={taskEmojis[task.id]}
                   />
                 )
               )}

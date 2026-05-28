@@ -10,6 +10,7 @@ import {
   isPast,
   addDays,
   startOfDay,
+  format,
 } from "date-fns";
 import type { Task } from "@/lib/types";
 import { TaskRow } from "./TaskRow";
@@ -17,6 +18,7 @@ import { TaskRow } from "./TaskRow";
 interface TasksSectionProps {
   tasks: Task[];
   onCompleteTask: (id: string) => void;
+  taskEmojis?: Record<string, string>;
 }
 
 function groupTasks(tasks: Task[]) {
@@ -54,12 +56,33 @@ interface GroupProps {
   onComplete: (id: string) => void;
   isFirst: boolean;
   collapsible?: boolean;
+  subgroupByDate?: boolean;
+  taskEmojis?: Record<string, string>;
 }
 
-function TaskGroup({ label, tasks, onComplete, isFirst, collapsible = false }: GroupProps) {
+function TaskGroup({ label, tasks, onComplete, isFirst, collapsible = false, subgroupByDate = false, taskEmojis = {} }: GroupProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   if (tasks.length === 0) return null;
+
+  // Build date sub-groups when multiple distinct dates exist
+  const dateGroups: { key: string; label: string; tasks: Task[] }[] = (() => {
+    if (!subgroupByDate) return [];
+    const map = new Map<string, Task[]>();
+    for (const t of tasks) {
+      const key = t.due_date ?? "__none__";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(t);
+    }
+    if (map.size <= 1) return []; // single date — no need to sub-group
+    return Array.from(map.entries()).map(([key, ts]) => ({
+      key,
+      label: key === "__none__" ? "No date" : format(parseISO(key), "EEE, MMM d"),
+      tasks: ts,
+    }));
+  })();
+
+  const useSubgroups = dateGroups.length > 0;
 
   return (
     <div style={{ borderTop: isFirst ? "none" : "1px solid var(--border-subtle)" }}>
@@ -82,15 +105,42 @@ function TaskGroup({ label, tasks, onComplete, isFirst, collapsible = false }: G
         )}
       </div>
 
-      {/* Task rows */}
-      {!collapsed && tasks.map((task, i) => (
-        <TaskRow
-          key={task.id}
-          task={task}
-          onComplete={onComplete}
-          showDivider={i < tasks.length - 1}
-        />
-      ))}
+      {/* Task rows — flat or date-sub-grouped */}
+      {!collapsed && (
+        useSubgroups ? (
+          dateGroups.map((dg) => (
+            <div key={dg.key}>
+              <div
+                className="flex items-center px-6 pb-1.5"
+                style={{ paddingTop: 6, borderTop: "1px solid var(--border-subtle)" }}
+              >
+                <span className="type-caption" style={{ color: "var(--text-tertiary)", letterSpacing: "0.04em" }}>
+                  {dg.label}
+                </span>
+              </div>
+              {dg.tasks.map((task, i) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onComplete={onComplete}
+                  showDivider={i < dg.tasks.length - 1}
+                  emoji={taskEmojis[task.id]}
+                />
+              ))}
+            </div>
+          ))
+        ) : (
+          tasks.map((task, i) => (
+            <TaskRow
+              key={task.id}
+              task={task}
+              onComplete={onComplete}
+              showDivider={i < tasks.length - 1}
+              emoji={taskEmojis[task.id]}
+            />
+          ))
+        )
+      )}
 
       {/* Bottom padding when expanded */}
       {!collapsed && <div style={{ height: 4 }} />}
@@ -98,7 +148,7 @@ function TaskGroup({ label, tasks, onComplete, isFirst, collapsible = false }: G
   );
 }
 
-export function TasksSection({ tasks, onCompleteTask }: TasksSectionProps) {
+export function TasksSection({ tasks, onCompleteTask, taskEmojis = {} }: TasksSectionProps) {
   const { todayGroup, tomorrowGroup, weekGroup, laterGroup } = groupTasks(tasks);
   const total = tasks.length;
 
@@ -127,8 +177,8 @@ export function TasksSection({ tasks, onCompleteTask }: TasksSectionProps) {
   const groups = [
     { label: "Today", tasks: todayGroup },
     { label: "Tomorrow", tasks: tomorrowGroup },
-    { label: "This Week", tasks: weekGroup },
-    { label: "Later", tasks: laterGroup, collapsible: true },
+    { label: "This Week", tasks: weekGroup, subgroupByDate: true },
+    { label: "Later", tasks: laterGroup, collapsible: true, subgroupByDate: true },
   ].filter((g) => g.tasks.length > 0);
 
   return (
@@ -157,6 +207,8 @@ export function TasksSection({ tasks, onCompleteTask }: TasksSectionProps) {
             onComplete={onCompleteTask}
             isFirst={i === 0}
             collapsible={g.collapsible}
+            subgroupByDate={g.subgroupByDate}
+            taskEmojis={taskEmojis}
           />
         ))}
       </div>
