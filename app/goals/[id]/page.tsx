@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase";
 import { getCheckIns, calculateStreak } from "@/lib/goals";
 import { getTierForStreak, getNextTier, TIERS } from "@/lib/tiers";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 import type { Goal } from "@/lib/types";
 
 export default function GoalDetailPage({
@@ -100,10 +101,9 @@ export default function GoalDetailPage({
               background: "var(--bg-card)",
               border: "1px solid var(--border-card)",
               boxShadow: "var(--shadow-card)",
-              fontSize: 28,
             }}
           >
-            {goal.emoji}
+            <Emoji size={28}>{goal.emoji}</Emoji>
           </div>
           <div>
             <h1 className="type-display" style={{ fontSize: "clamp(24px, 2.5vw, 36px)" }}>
@@ -127,7 +127,7 @@ export default function GoalDetailPage({
             </div>
             <div className="text-right">
               <p className="type-section mb-1">Tier</p>
-              <p style={{ fontSize: 28 }}>{tier.emoji}</p>
+              <p><Emoji size={28}>{tier.emoji}</Emoji></p>
               <p className="type-small" style={{ color: "var(--text-secondary)" }}>{tier.name}</p>
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function GoalDetailPage({
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="type-caption">{tier.name}</span>
-                <span className="type-caption">{nextTier.emoji} {nextTier.name} at {nextTier.threshold} days</span>
+                <span className="type-caption flex items-center gap-1"><Emoji size={12}>{nextTier.emoji}</Emoji> {nextTier.name} at {nextTier.threshold} days</span>
               </div>
               <div
                 className="rounded-full overflow-hidden"
@@ -158,8 +158,8 @@ export default function GoalDetailPage({
           )}
 
           {!nextTier && (
-            <p className="type-small" style={{ color: "var(--accent-success)" }}>
-              🏆 Maximum tier reached. Legendary.
+            <p className="type-small flex items-center gap-1.5" style={{ color: "var(--accent-success)" }}>
+              <Emoji size={14}>🏆</Emoji> Maximum tier reached. Legendary.
             </p>
           )}
         </motion.div>
@@ -209,7 +209,7 @@ export default function GoalDetailPage({
               className="flex items-center gap-3"
               style={{ opacity: streak >= t.threshold ? 1 : 0.4 }}
             >
-              <span style={{ fontSize: 20, width: 28 }}>{t.emoji}</span>
+              <span style={{ width: 28 }}><Emoji size={20}>{t.emoji}</Emoji></span>
               <div className="flex-1">
                 <span className="type-body" style={{ fontWeight: streak >= t.threshold ? 500 : 400 }}>
                   {t.name}

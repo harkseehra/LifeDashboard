@@ -7,6 +7,7 @@ import { usePlaidLink } from "react-plaid-link";
 import { RefreshCw, Trash2, AlertCircle, Plus, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { fadeUp, staggerParent, spring, micro, springGentle } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 
 // Maps both legacy ("Food and Drink") and new PFC codes ("FOOD_AND_DRINK")
 const CATEGORY_MAP: Record<string, { emoji: string; color: string }> = {
@@ -593,9 +594,9 @@ export default function PurchasesPage() {
                     {/* Emoji */}
                     <div
                       className="shrink-0 flex items-center justify-center"
-                      style={{ width: 36, height: 36, borderRadius: 10, background: `${cat.color}18`, fontSize: 18, lineHeight: 1 }}
+                      style={{ width: 36, height: 36, borderRadius: 10, background: `${cat.color}18` }}
                     >
-                      {cat.emoji}
+                      <Emoji size={18}>{cat.emoji}</Emoji>
                     </div>
 
                     {/* Category + bar */}
@@ -658,7 +659,7 @@ export default function PurchasesPage() {
                   className="flex items-center gap-3 px-5 py-3.5"
                   style={{ borderBottom: i < items.length - 1 ? "1px solid var(--border-subtle)" : "none" }}
                 >
-                  <span style={{ fontSize: 20 }}>🏦</span>
+                  <Emoji size={20}>🏦</Emoji>
                   <span className="type-body flex-1" style={{ fontWeight: 500 }}>{item.institution_name}</span>
                   <button
                     onClick={() => handleDisconnect(item.id)}
@@ -775,9 +776,9 @@ export default function PurchasesPage() {
                   >
                     <div
                       className="shrink-0 flex items-center justify-center"
-                      style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(52,199,89,0.12)", fontSize: 20 }}
+                      style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(52,199,89,0.12)" }}
                     >
-                      💰
+                      <Emoji size={20}>💰</Emoji>
                     </div>
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                       <span className="type-body truncate" style={{ fontWeight: 500 }}>
@@ -834,9 +835,9 @@ export default function PurchasesPage() {
                       >
                         <div
                           className="shrink-0 flex items-center justify-center"
-                          style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15`, fontSize: 20, lineHeight: 1 }}
+                          style={{ width: 40, height: 40, borderRadius: 12, background: `${color}15` }}
                         >
-                          {emoji}
+                          <Emoji size={20}>{emoji}</Emoji>
                         </div>
                         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                           <span className="type-body truncate" style={{ fontWeight: 500 }}>

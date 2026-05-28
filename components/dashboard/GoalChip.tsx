@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { spring } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 import type { CheckInGoal } from "@/components/modals/CheckInPopover";
 
 interface GoalChipProps {
@@ -49,7 +50,7 @@ export function GoalChip({
           : "var(--bg-card)";
       }}
     >
-      <span style={{ fontSize: 20, lineHeight: 1 }}>{goal.emoji}</span>
+      <Emoji size={20}>{goal.emoji}</Emoji>
       <div className="flex flex-col gap-0.5">
         <span
           className="type-body"

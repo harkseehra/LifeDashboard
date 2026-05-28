@@ -7,6 +7,7 @@ import { Trash2, Plus, ChevronRight, AlertCircle } from "lucide-react";
 import { getGoals, addGoal, deleteGoal, calculateStreak, getCheckIns } from "@/lib/goals";
 import { getTierForStreak } from "@/lib/tiers";
 import { fadeUp, staggerParent, spring } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 import type { Goal } from "@/lib/types";
 
 const EMOJI_SUGGESTIONS = ["🌱", "💪", "📚", "🧘", "💧", "🏃", "✍️", "🎯", "🛌", "🍎"];
@@ -125,7 +126,7 @@ export default function GoalsPage() {
                       cursor: "pointer",
                     }}
                   >
-                    {e}
+                    <Emoji size={18}>{e}</Emoji>
                   </button>
                 ))}
                 <input
@@ -260,16 +261,16 @@ export default function GoalsPage() {
                   >
                     <div
                       className="flex items-center justify-center shrink-0"
-                      style={{ width: 40, height: 40, borderRadius: 10, background: "var(--bg-card-hover)", fontSize: 22 }}
+                      style={{ width: 40, height: 40, borderRadius: 10, background: "var(--bg-card-hover)" }}
                     >
-                      {goal.emoji}
+                      <Emoji size={22}>{goal.emoji}</Emoji>
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="type-body" style={{ fontWeight: 500 }}>{goal.title}</p>
-                      <p className="type-small" style={{ color: "var(--text-tertiary)" }}>
-                        {goal.streak > 0
-                          ? `${goal.streak} day streak · ${tier.emoji} ${tier.name}`
-                          : "No streak yet — check in today"}
+                      <p className="type-small flex items-center gap-1" style={{ color: "var(--text-tertiary)" }}>
+                        {goal.streak > 0 ? (
+                          <>{goal.streak} day streak · <Emoji size={12}>{tier.emoji}</Emoji> {tier.name}</>
+                        ) : "No streak yet — check in today"}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

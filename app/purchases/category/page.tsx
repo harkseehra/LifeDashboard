@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { fadeUp, staggerParent, spring, micro } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 
 // ── Shared category logic (mirrors purchases/page.tsx) ────────────────────
 
@@ -252,10 +253,9 @@ function CategoryPageInner() {
             style={{
               width: 52, height: 52, borderRadius: 14,
               background: `${catInfo.color}18`,
-              fontSize: 26,
             }}
           >
-            {catInfo.emoji}
+            <Emoji size={26}>{catInfo.emoji}</Emoji>
           </div>
           <div>
             <h1 className="type-display">{categoryLabel}</h1>
@@ -314,9 +314,9 @@ function CategoryPageInner() {
               >
                 <div
                   className="shrink-0 flex items-center justify-center"
-                  style={{ width: 40, height: 40, borderRadius: 12, background: `${catInfo.color}15`, fontSize: 20 }}
+                  style={{ width: 40, height: 40, borderRadius: 12, background: `${catInfo.color}15` }}
                 >
-                  {catInfo.emoji}
+                  <Emoji size={20}>{catInfo.emoji}</Emoji>
                 </div>
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                   <span className="type-body truncate" style={{ fontWeight: 500 }}>

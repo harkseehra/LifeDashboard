@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getWishlist, addWishlistItem, deleteWishlistItem } from "@/lib/wishlist";
 import { fadeUp, staggerParent, spring, springGentle } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 import type { WishlistItem, SavingsAdvice } from "@/lib/types";
 
 const EMOJI_OPTIONS = ["🛒", "🚗", "✈️", "💻", "📱", "🏠", "🎸", "⌚", "📷", "🎮", "👟", "🏋️", "📚", "🎨"];
@@ -243,12 +244,12 @@ export default function WishlistPage() {
                     onClick={() => { setEmoji(e); setCustomEmoji(""); }}
                     className="flex items-center justify-center rounded-[8px] transition-all duration-150"
                     style={{
-                      width: 36, height: 36, fontSize: 18,
+                      width: 36, height: 36,
                       background: !customEmoji && emoji === e ? "var(--accent)" : "var(--bg-card-hover)",
                       border: "none", cursor: "pointer",
                     }}
                   >
-                    {e}
+                    <Emoji size={18}>{e}</Emoji>
                   </button>
                 ))}
                 <input
@@ -626,9 +627,9 @@ export default function WishlistPage() {
             <div className="card px-6 py-12 flex flex-col items-center gap-3 text-center">
               <div
                 className="flex items-center justify-center rounded-2xl"
-                style={{ width: 48, height: 48, background: "var(--bg-card-hover)", fontSize: 24 }}
+                style={{ width: 48, height: 48, background: "var(--bg-card-hover)" }}
               >
-                🛒
+                <Emoji size={24}>🛒</Emoji>
               </div>
               <p className="type-body" style={{ fontWeight: 500 }}>Nothing on your wishlist yet</p>
               <p className="type-small" style={{ color: "var(--text-tertiary)" }}>
@@ -659,9 +660,9 @@ export default function WishlistPage() {
                       {/* Emoji */}
                       <div
                         className="flex items-center justify-center shrink-0"
-                        style={{ width: 42, height: 42, borderRadius: 11, background: "var(--bg-card-hover)", fontSize: 22 }}
+                        style={{ width: 42, height: 42, borderRadius: 11, background: "var(--bg-card-hover)" }}
                       >
-                        {item.emoji}
+                        <Emoji size={22}>{item.emoji}</Emoji>
                       </div>
 
                       {/* Info */}

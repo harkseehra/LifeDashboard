@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Trash2 } from "lucide-react";
+import { Emoji } from "@/components/ui/Emoji";
 import { format, parseISO, isToday, isPast, isTomorrow } from "date-fns";
 import type { Task } from "@/lib/types";
 
@@ -121,16 +122,8 @@ export function TaskRow({
 
         {/* Task emoji */}
         {emoji && !isEditing && (
-          <span
-            style={{
-              fontSize: 15,
-              lineHeight: 1,
-              flexShrink: 0,
-              opacity: completing ? 0.35 : 1,
-              transition: "opacity 300ms ease",
-            }}
-          >
-            {emoji}
+          <span style={{ opacity: completing ? 0.35 : 1, transition: "opacity 300ms ease", flexShrink: 0 }}>
+            <Emoji size={15}>{emoji}</Emoji>
           </span>
         )}
 

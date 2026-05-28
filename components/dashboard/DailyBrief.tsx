@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format, isToday, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase";
 import { spring, micro } from "@/lib/animations";
+import { Emoji } from "@/components/ui/Emoji";
 import type { Task, Appointment } from "@/lib/types";
 
 interface Props {
@@ -35,7 +36,7 @@ function Chip({ emoji, label, accent }: { emoji: string; label: string; accent?:
         border: `1px solid ${accent ? `${accent}28` : "var(--border-card)"}`,
       }}
     >
-      <span style={{ fontSize: 13 }}>{emoji}</span>
+      <Emoji size={14}>{emoji}</Emoji>
       <span className="type-small" style={{ fontWeight: 500, color: accent ?? "var(--text-secondary)", whiteSpace: "nowrap" }}>
         {label}
       </span>
