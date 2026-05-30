@@ -135,6 +135,7 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
             { href: "/goals",     label: "Goals" },
             { href: "/purchases", label: "Purchases" },
             { href: "/wishlist",  label: "Wishlist" },
+            { href: "/budget",    label: "Budget" },
           ].map(({ href, label }) => (
             <Link key={href} href={href} passHref legacyBehavior>
               <motion.a
