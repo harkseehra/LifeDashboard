@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
+import { GripVertical } from "lucide-react";
 import { QuickCapture } from "./QuickCapture";
 import { TasksSection } from "./TasksSection";
 import { AppointmentsSection } from "./AppointmentsSection";
 import { PurchasesSection } from "./PurchasesSection";
 import { DailyBrief } from "./DailyBrief";
+import { BudgetWidget } from "./BudgetWidget";
 import { addTask, completeTask } from "@/lib/tasks";
 import { addAppointment } from "@/lib/appointments";
 import { addGoal } from "@/lib/goals";
@@ -15,22 +17,79 @@ import { loadTaskEmojis, saveTaskEmoji } from "@/lib/task-emojis";
 import { fadeUp, staggerParent, spring, springSnap } from "@/lib/animations";
 import type { Task, Appointment } from "@/lib/types";
 
+const WIDGET_ORDER_KEY = "ld_widget_order";
+const DEFAULT_ORDER = ["goals", "tasks", "appointments", "purchases", "budget"];
+
 interface DashboardLayoutProps {
   initialTasks: Task[];
   initialAppointments: Appointment[];
   goals: React.ReactNode;
 }
 
+// ── Draggable widget shell ─────────────────────────────────────────────────
+// Each widget sits inside this shell. Drag is only triggered from the handle
+// (dragListener={false}) so clicks/taps inside widgets work normally.
+
+function WidgetShell({ id, children }: { id: string; children: React.ReactNode }) {
+  const controls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={id}
+      dragListener={false}
+      dragControls={controls}
+      as="div"
+      className="relative group"
+      style={{ listStyle: "none" }}
+    >
+      {children}
+      {/* Grip handle — appears on hover in the top-right of the widget */}
+      <div
+        className="absolute right-3 top-3 z-20 opacity-0 group-hover:opacity-100 transition-opacity rounded-[6px] p-1"
+        style={{
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-card)",
+          boxShadow: "var(--shadow-card)",
+          cursor: "grab",
+          touchAction: "none",
+        }}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          controls.start(e);
+        }}
+        title="Drag to reorder"
+      >
+        <GripVertical size={13} style={{ color: "var(--text-tertiary)" }} />
+      </div>
+    </Reorder.Item>
+  );
+}
+
+// ── Main layout ────────────────────────────────────────────────────────────
+
 export function DashboardLayout({ initialTasks, initialAppointments, goals }: DashboardLayoutProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
   const [toast, setToast] = useState<string | null>(null);
   const [taskEmojis, setTaskEmojis] = useState<Record<string, string>>({});
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(DEFAULT_ORDER);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setTaskEmojis(loadTaskEmojis());
+    // Restore saved widget order, ensuring all widgets are present
+    try {
+      const saved = JSON.parse(localStorage.getItem(WIDGET_ORDER_KEY) ?? "null") as string[] | null;
+      if (Array.isArray(saved) && DEFAULT_ORDER.every((id) => saved.includes(id))) {
+        setWidgetOrder(saved);
+      }
+    } catch { /* ignore */ }
   }, []);
+
+  const handleReorder = (order: string[]) => {
+    setWidgetOrder(order);
+    try { localStorage.setItem(WIDGET_ORDER_KEY, JSON.stringify(order)); } catch { /* ignore */ }
+  };
 
   const showToast = (msg: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -59,7 +118,6 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
       showToast("Couldn't save the task — check your connection and try again.");
     } else {
       setTasks((prev) => prev.map((t) => (t.id === tempId ? data : t)));
-      // Fetch emoji in background — don't await, fire and forget
       fetch("/api/ai/task-emoji", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,6 +180,17 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
     }
   };
 
+  const renderWidget = (id: string) => {
+    switch (id) {
+      case "goals":        return <>{goals}</>;
+      case "tasks":        return <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} taskEmojis={taskEmojis} />;
+      case "appointments": return <AppointmentsSection appointments={appointments} />;
+      case "purchases":    return <PurchasesSection />;
+      case "budget":       return <BudgetWidget />;
+      default:             return null;
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -130,12 +199,12 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
         initial="hidden"
         animate="visible"
       >
+        {/* ── Nav pills (pinned) ─────────────────────────────────── */}
         <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-1.5">
           {[
             { href: "/goals",     label: "Goals" },
             { href: "/purchases", label: "Purchases" },
             { href: "/wishlist",  label: "Wishlist" },
-            { href: "/budget",    label: "Budget" },
           ].map(({ href, label }) => (
             <Link key={href} href={href} passHref legacyBehavior>
               <motion.a
@@ -169,6 +238,7 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
           ))}
         </motion.div>
 
+        {/* ── Daily brief + quick capture (pinned) ──────────────── */}
         <motion.div variants={fadeUp} transition={spring}>
           <DailyBrief tasks={tasks} appointments={appointments} />
         </motion.div>
@@ -180,26 +250,25 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
             onAddGoal={handleAddGoal}
           />
         </motion.div>
-
-        <motion.div variants={fadeUp} transition={spring}>
-          {goals}
-        </motion.div>
-
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start"
-          variants={fadeUp}
-          transition={spring}
-        >
-          <div className="lg:col-span-3">
-            <TasksSection tasks={tasks} onCompleteTask={handleCompleteTask} taskEmojis={taskEmojis} />
-          </div>
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <AppointmentsSection appointments={appointments} />
-            <PurchasesSection />
-          </div>
-        </motion.div>
       </motion.div>
 
+      {/* ── Reorderable widgets ────────────────────────────────── */}
+      <Reorder.Group
+        as="div"
+        axis="y"
+        values={widgetOrder}
+        onReorder={handleReorder}
+        className="flex flex-col gap-6 mt-6"
+        style={{ outline: "none" }}
+      >
+        {widgetOrder.map((id) => (
+          <WidgetShell key={id} id={id}>
+            {renderWidget(id)}
+          </WidgetShell>
+        ))}
+      </Reorder.Group>
+
+      {/* ── Toast ─────────────────────────────────────────────── */}
       {toast && (
         <div
           className="fixed bottom-6 left-1/2 -translate-x-1/2 glass rounded-[12px] px-4 py-3 type-small z-50 whitespace-nowrap"
