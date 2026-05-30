@@ -31,12 +31,6 @@ interface ChatMessage {
 }
 
 const CHAT_KEY = "ld_financial_chat";
-const STARTER_PROMPTS = [
-  "My budget is rent $700, food $400, phone $80",
-  "I have a lawyer bill for $1000 and car license renewal $500",
-  "Should I pay off my debt or save more right now?",
-  "How much can I realistically save this month?",
-];
 
 // ── Budget Overview Panel ──────────────────────────────────────────────────
 
@@ -477,26 +471,6 @@ export default function BudgetPage() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col gap-2 mt-2">
-                      {STARTER_PROMPTS.map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => sendMessage(p)}
-                          className="text-left px-4 py-3 rounded-[10px] type-small transition-colors duration-100"
-                          style={{
-                            background: "var(--bg-card-hover)",
-                            border: "1px solid var(--border-card)",
-                            color: "var(--text-secondary)",
-                            cursor: "pointer",
-                            fontFamily: "inherit",
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--border-subtle)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--bg-card-hover)"; }}
-                        >
-                          {p}
-                        </button>
-                      ))}
-                    </div>
                   </motion.div>
                 ) : (
                   messages.map((msg) => <Bubble key={msg.id} msg={msg} />)
@@ -507,15 +481,15 @@ export default function BudgetPage() {
 
             {/* Input */}
             <div
-              className="shrink-0 px-4 py-3"
+              className="shrink-0 px-5 py-4"
               style={{ borderTop: "1px solid var(--border-subtle)" }}
             >
               <div
-                className="flex items-end gap-2 rounded-[12px] px-4 py-2.5"
+                className="rounded-[14px] px-4 pt-3 pb-3"
                 style={{
                   background: "var(--bg-card-hover)",
                   border: "1px solid var(--border-card)",
-                  transition: "border-color 150ms",
+                  transition: "border-color 150ms, box-shadow 150ms",
                 }}
                 onFocusCapture={(e) => {
                   (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent)";
@@ -532,39 +506,42 @@ export default function BudgetPage() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Tell me your budget, ask for advice…"
-                  rows={1}
+                  rows={3}
                   disabled={sending}
-                  className="flex-1 type-body bg-transparent outline-none resize-none"
+                  className="w-full type-body bg-transparent outline-none resize-none"
                   style={{
                     border: "none",
                     color: "var(--text-primary)",
                     fontFamily: "inherit",
-                    lineHeight: 1.5,
-                    maxHeight: 120,
+                    lineHeight: 1.6,
+                    maxHeight: 160,
                     overflow: "auto",
                     opacity: sending ? 0.5 : 1,
+                    display: "block",
                   }}
                 />
-                <button
-                  onClick={() => sendMessage(input)}
-                  disabled={!input.trim() || sending}
-                  className="btn-primary shrink-0"
-                  style={{ height: 32, padding: "0 12px", borderRadius: 8 }}
-                >
-                  {sending ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      style={{ width: 12, height: 12, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%" }}
-                    />
-                  ) : (
-                    <Send size={13} />
-                  )}
-                </button>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="type-caption" style={{ color: "var(--text-tertiary)", letterSpacing: 0, textTransform: "none", fontSize: 11 }}>
+                    Enter to send · Shift+Enter for new line
+                  </p>
+                  <button
+                    onClick={() => sendMessage(input)}
+                    disabled={!input.trim() || sending}
+                    className="btn-primary shrink-0"
+                    style={{ height: 34, padding: "0 16px", borderRadius: 8 }}
+                  >
+                    {sending ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        style={{ width: 13, height: 13, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%" }}
+                      />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                  </button>
+                </div>
               </div>
-              <p className="type-caption mt-1.5 text-center" style={{ color: "var(--text-tertiary)", letterSpacing: 0, textTransform: "none", fontSize: 11 }}>
-                Enter to send · Shift+Enter for new line · Changes update the widget instantly
-              </p>
             </div>
           </div>
         </motion.div>
