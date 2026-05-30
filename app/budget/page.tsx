@@ -341,6 +341,7 @@ export default function BudgetPage() {
         body: JSON.stringify({
           messages: messages.filter((m) => !m.loading).map((m) => ({ role: m.role, content: m.content })),
           newMessage: trimmed,
+          bankBalance,
         }),
       });
 

@@ -71,14 +71,15 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { messages, newMessage } = await request.json() as {
+    // bankBalance comes from the client — avoids a slow Plaid round-trip on every message
+    const { messages, newMessage, bankBalance: clientBankBalance } = await request.json() as {
       messages: ChatMessage[];
       newMessage: string;
+      bankBalance: number | null;
     };
 
-    // ── Gather financial context ──────────────────────────────────────────────
+    // ── Budget items from DB ──────────────────────────────────────────────────
 
-    // Budget items
     const { data: budgetItems } = await supabase
       .from("budget_items")
       .select("*")
@@ -91,54 +92,17 @@ export async function POST(request: NextRequest) {
     const recurringTotal = recurring.reduce((s, i) => s + i.amount, 0);
     const oneTimeTotal = oneTime.reduce((s, i) => s + i.amount, 0);
 
-    // Plaid balance + income
-    let bankBalance: number | null = null;
-    let monthlyIncome: number | null = null;
+    const bankBalance: number | null = typeof clientBankBalance === "number" ? clientBankBalance : null;
 
-    try {
-      const { data: plaidItems } = await supabase
-        .from("plaid_items")
-        .select("access_token")
-        .eq("user_id", user.id);
+    // ── Date context ──────────────────────────────────────────────────────────
 
-      if (plaidItems && plaidItems.length > 0) {
-        const { plaidClient } = await import("@/lib/plaid");
-
-        // Balances
-        const acctRes = await plaidClient.accountsBalanceGet({
-          access_token: plaidItems[0].access_token,
-        });
-        bankBalance = acctRes.data.accounts
-          .filter((a) => a.type === "depository")
-          .reduce((s, a) => s + (a.balances.current ?? 0), 0);
-
-        // This month's income from transactions
-        const today = new Date();
-        const startDate = format(new Date(today.getFullYear(), today.getMonth(), 1), "yyyy-MM-dd");
-        const endDate = format(today, "yyyy-MM-dd");
-
-        const txRes = await plaidClient.transactionsGet({
-          access_token: plaidItems[0].access_token,
-          start_date: startDate,
-          end_date: endDate,
-          options: { count: 100, offset: 0 },
-        });
-
-        // Negative amounts = credits/income in Plaid
-        monthlyIncome = txRes.data.transactions
-          .filter((t) => t.amount < 0 && !t.pending)
-          .reduce((s, t) => s + Math.abs(t.amount), 0);
-      }
-    } catch { /* no bank connected */ }
-
-    // Date context
     const today = new Date();
     const dayOfMonth = today.getDate();
     const daysInMonth = getDaysInMonth(today);
     const daysLeft = daysInMonth - dayOfMonth;
     const monthName = format(today, "MMMM yyyy");
 
-    // ── Build system prompt ───────────────────────────────────────────────────
+    // ── System prompt ─────────────────────────────────────────────────────────
 
     const budgetListStr = recurring.length > 0
       ? recurring.map((i) => `  • ${i.name}: $${i.amount.toFixed(2)} (id: ${i.id})`).join("\n")
@@ -157,7 +121,6 @@ TODAY: ${format(today, "EEEE, MMMM d, yyyy")} — Day ${dayOfMonth} of ${daysInM
 
 CURRENT FINANCIAL SNAPSHOT:
 ${bankBalance !== null ? `• Bank balance: $${bankBalance.toFixed(2)}` : "• Bank balance: not connected"}
-${monthlyIncome !== null ? `• Income received this month so far: $${monthlyIncome.toFixed(2)}` : "• Income: not available"}
 
 BUDGET OVERVIEW:
 Monthly recurring expenses (total: $${recurringTotal.toFixed(2)}):
@@ -182,7 +145,6 @@ INSTRUCTIONS:
 
     const actions: BudgetAction[] = [];
 
-    // Convert history to Anthropic format (text only — prior tool calls not needed)
     const claudeMessages: Anthropic.MessageParam[] = [
       ...messages.map((m) => ({ role: m.role, content: m.content })),
       { role: "user", content: newMessage },
@@ -190,10 +152,9 @@ INSTRUCTIONS:
 
     let response: Anthropic.Message;
 
-    // Agentic loop — keeps going until no more tool calls
     while (true) {
       response = await client.messages.create({
-        model: "claude-sonnet-4-6",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 1024,
         system: systemPrompt,
         tools: TOOLS,
@@ -202,7 +163,6 @@ INSTRUCTIONS:
 
       if (response.stop_reason !== "tool_use") break;
 
-      // Execute tool calls
       const assistantContent = response.content;
       claudeMessages.push({ role: "assistant", content: assistantContent });
 
@@ -219,7 +179,6 @@ INSTRUCTIONS:
           const results: BudgetItem[] = [];
 
           for (const item of newItems) {
-            // Server-side upsert
             const { data: existing } = await supabase
               .from("budget_items")
               .select("id")
@@ -228,7 +187,8 @@ INSTRUCTIONS:
               .eq("type", item.type)
               .maybeSingle();
 
-            let saved: BudgetItem;
+            let saved: BudgetItem | null = null;
+
             if (existing) {
               const { data } = await supabase
                 .from("budget_items")
@@ -236,24 +196,29 @@ INSTRUCTIONS:
                 .eq("id", existing.id)
                 .select()
                 .single();
-              saved = data as BudgetItem;
+              saved = data as BudgetItem | null;
             } else {
               const { data } = await supabase
                 .from("budget_items")
                 .insert({ ...item, user_id: user.id })
                 .select()
                 .single();
-              saved = data as BudgetItem;
+              saved = data as BudgetItem | null;
             }
 
-            results.push(saved);
-            actions.push({ type: "upserted", item: { id: saved.id, name: saved.name, amount: saved.amount, itemType: saved.type } });
+            if (saved) {
+              results.push(saved);
+              actions.push({ type: "upserted", item: { id: saved.id, name: saved.name, amount: saved.amount, itemType: saved.type } });
+            } else {
+              // DB write failed — record intent so UI still shows the chip
+              actions.push({ type: "upserted", item: { name: item.name, amount: item.amount, itemType: item.type } });
+            }
           }
 
           toolResults.push({
             type: "tool_result",
             tool_use_id: block.id,
-            content: JSON.stringify({ success: true, items: results }),
+            content: JSON.stringify({ success: results.length > 0, items: results }),
           });
         }
 
@@ -267,7 +232,7 @@ INSTRUCTIONS:
             .select()
             .single();
 
-          actions.push({ type: "removed", item: { id, name: (removed as BudgetItem)?.name ?? id } });
+          actions.push({ type: "removed", item: { id, name: (removed as BudgetItem | null)?.name ?? id } });
 
           toolResults.push({
             type: "tool_result",
