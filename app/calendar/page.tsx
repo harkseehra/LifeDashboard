@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isToday, isSameMonth, isSameDay,
@@ -493,9 +493,7 @@ export default function CalendarPage() {
         animate="visible"
       >
         <motion.div variants={fadeUp} transition={spring}>
-          <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
-            ← Dashboard
-          </Link>
+          <BackButton />
         </motion.div>
 
         {/* Two-panel layout */}

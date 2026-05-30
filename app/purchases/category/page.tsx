@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { BackButton } from "@/components/ui/BackButton";
 import { fadeUp, staggerParent, spring, micro } from "@/lib/animations";
 import { Emoji } from "@/components/ui/Emoji";
 
@@ -234,16 +233,8 @@ function CategoryPageInner() {
         animate="visible"
         className="flex flex-col gap-8"
       >
-        {/* Back */}
         <motion.div variants={fadeUp} transition={spring}>
-          <Link
-            href="/purchases"
-            className="flex items-center gap-1.5 type-small"
-            style={{ color: "var(--accent)", width: "fit-content" }}
-          >
-            <ArrowLeft size={13} />
-            Purchases
-          </Link>
+          <BackButton href="/purchases" label="Purchases" />
         </motion.div>
 
         {/* Header */}

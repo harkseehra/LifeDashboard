@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { LogOut, MapPin, Shield } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { createClient } from "@/lib/supabase";
@@ -37,9 +37,7 @@ export default function SettingsPage() {
         animate="visible"
       >
         <motion.div variants={fadeUp} transition={spring}>
-          <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
-            ← Dashboard
-          </Link>
+          <BackButton />
         </motion.div>
 
         <motion.h1 variants={fadeUp} transition={spring} className="type-display">

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { usePlaidLink } from "react-plaid-link";
 import { RefreshCw, Trash2, AlertCircle, Plus, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -462,7 +463,7 @@ export default function PurchasesPage() {
       >
         {/* Back */}
         <motion.div variants={fadeUp} transition={spring}>
-          <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>← Dashboard</Link>
+          <BackButton />
         </motion.div>
 
         {/* Header */}

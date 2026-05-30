@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { use } from "react";
 import { format, subDays, eachDayOfInterval, parseISO } from "date-fns";
 import { createClient } from "@/lib/supabase";
@@ -85,9 +85,7 @@ export default function GoalDetailPage({
         className="flex flex-col gap-8"
       >
         <motion.div variants={fadeUp} transition={spring}>
-          <Link href="/goals" className="type-small" style={{ color: "var(--accent)" }}>
-            ← Goals
-          </Link>
+          <BackButton href="/goals" label="Goals" />
         </motion.div>
 
         {/* Goal header */}

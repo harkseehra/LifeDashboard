@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Reorder } from "framer-motion";
-import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { parseISO, isPast, isToday, format } from "date-fns";
 import { createClient } from "@/lib/supabase";
 import { completeTask, uncompleteTask, deleteTask, updateTask } from "@/lib/tasks";
@@ -124,9 +124,7 @@ export default function TasksPage() {
         animate="visible"
       >
         <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-4">
-          <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>
-            ← Dashboard
-          </Link>
+          <BackButton />
         </motion.div>
 
         <motion.div variants={fadeUp} transition={spring} className="flex items-center justify-between">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { BackButton } from "@/components/ui/BackButton";
 import { Trash2, Plus, ChevronRight, AlertCircle } from "lucide-react";
 import { getGoals, addGoal, deleteGoal, calculateStreak, getCheckIns } from "@/lib/goals";
 import { getTierForStreak } from "@/lib/tiers";
@@ -82,7 +83,7 @@ export default function GoalsPage() {
         className="flex flex-col gap-8"
       >
         <motion.div variants={fadeUp} transition={spring}>
-          <Link href="/" className="type-small" style={{ color: "var(--accent)" }}>← Dashboard</Link>
+          <BackButton />
         </motion.div>
 
         <motion.div variants={fadeUp} transition={spring} className="flex items-center justify-between">
