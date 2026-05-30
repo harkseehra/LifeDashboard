@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
-import { spring } from "@/lib/animations";
+import { spring, springGentle, springWobbly } from "@/lib/animations";
 import type { Tier } from "@/lib/tiers";
 
 export interface CheckInGoal {
@@ -49,10 +49,10 @@ export function CheckInPopover({
       }}
     >
       <motion.div
-        initial={{ scale: 0.96, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.96, opacity: 0 }}
-        transition={spring}
+        initial={{ scale: 0.94, opacity: 0, y: 12 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.96, opacity: 0, y: 8 }}
+        transition={springGentle}
         className="glass w-full max-w-[380px] rounded-[18px] overflow-hidden"
         style={{
           border: "1px solid var(--border-card)",
@@ -179,9 +179,13 @@ function CelebrationScreen({
   return (
     <div className="p-8 flex flex-col items-center gap-6 text-center">
       <motion.span
-        initial={{ scale: 0 }}
-        animate={{ scale: [0, 1.15, 1] }}
-        transition={{ duration: 0.6, times: [0, 0.7, 1] }}
+        initial={{ scale: 0, rotate: -15 }}
+        animate={{ scale: [0, 1.25, 0.9, 1.08, 1], rotate: [0, 8, -6, 3, 0] }}
+        transition={{
+          ...springWobbly,
+          duration: 0.75,
+          times: [0, 0.45, 0.65, 0.8, 1],
+        }}
         style={{ fontSize: 96, lineHeight: 1, display: "block" }}
       >
         {tier.emoji}

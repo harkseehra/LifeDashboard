@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { getGreeting } from "@/lib/date-helpers";
-import { fadeUp, spring } from "@/lib/animations";
+import { fadeUp, spring, springStiff } from "@/lib/animations";
 
 // ── Weather helpers ──────────────────────────────────────────────────────────
 
@@ -144,9 +144,9 @@ export function Header() {
         {/* Weather pill */}
         {mounted && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full"
             style={{
               background: "var(--bg-card)",
@@ -179,10 +179,11 @@ export function Header() {
 
         {/* Theme toggle */}
         {mounted && (
-          <button
+          <motion.button
             onClick={cycleTheme}
             title={`Theme: ${theme}`}
-            className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-150"
+            aria-label={`Switch theme (current: ${theme})`}
+            className="flex items-center justify-center w-8 h-8 rounded-full"
             style={{
               background: "var(--bg-card)",
               border: "1px solid var(--border-card)",
@@ -190,15 +191,12 @@ export function Header() {
               color: "var(--text-secondary)",
               cursor: "pointer",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--bg-card-hover)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "var(--bg-card)";
-            }}
+            whileHover={{ scale: 1.1, color: "var(--text-primary)" }}
+            whileTap={{ scale: 0.88, rotate: 15 }}
+            transition={springStiff}
           >
             <ThemeIcon size={14} />
-          </button>
+          </motion.button>
         )}
       </div>
     </motion.header>

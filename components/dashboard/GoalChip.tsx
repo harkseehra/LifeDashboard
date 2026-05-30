@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { spring } from "@/lib/animations";
+import { springSnap } from "@/lib/animations";
 import { Emoji } from "@/components/ui/Emoji";
 import type { CheckInGoal } from "@/components/modals/CheckInPopover";
 
@@ -18,36 +18,52 @@ export function GoalChip({
   isLate = false,
   checkedIn = false,
 }: GoalChipProps) {
+  const borderColor = checkedIn
+    ? "var(--accent-success)"
+    : isLate
+    ? "var(--accent-overdue)"
+    : "var(--border-card)";
+
   return (
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.96 }}
-      transition={spring}
-      className="flex items-center gap-3 px-4 py-3 rounded-card shrink-0"
+      // ── Clean Framer Motion variants: no inline JS hover handlers ──
+      initial="rest"
+      whileHover={checkedIn ? "checkedHover" : "hover"}
+      whileTap="tap"
+      variants={{
+        rest: {
+          scale: 1,
+          y: 0,
+          background: checkedIn ? "rgba(52,199,89,0.08)" : "var(--bg-card)",
+        },
+        hover: {
+          scale: 1.02,
+          y: -2,
+          background: "var(--bg-card-hover)",
+        },
+        checkedHover: {
+          scale: 1.01,
+          y: -1,
+          background: "rgba(52,199,89,0.14)",
+        },
+        tap: {
+          scale: 0.96,
+          y: 0,
+        },
+      }}
+      transition={springSnap}
+      className="flex items-center gap-3 px-4 py-3 shrink-0"
       style={{
-        background: checkedIn ? "rgba(52,199,89,0.08)" : "var(--bg-card)",
-        border: `1.5px solid ${
-          checkedIn
-            ? "var(--accent-success)"
-            : isLate
-            ? "var(--accent-overdue)"
-            : "var(--border-card)"
-        }`,
+        borderRadius: 14,
+        border: `1.5px solid ${borderColor}`,
         boxShadow: "var(--shadow-card)",
         cursor: checkedIn ? "default" : "pointer",
         fontFamily: "inherit",
         textAlign: "left",
-        transition: "background 180ms ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = checkedIn
-          ? "rgba(52,199,89,0.12)"
-          : "var(--bg-card-hover)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = checkedIn
-          ? "rgba(52,199,89,0.08)"
-          : "var(--bg-card)";
+        // border-color transition stays CSS for performance — only
+        // Framer handles transform/background
+        transition: "border-color 200ms ease",
       }}
     >
       <Emoji size={20}>{goal.emoji}</Emoji>

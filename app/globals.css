@@ -26,10 +26,11 @@
 
   --glass-bg: rgba(255, 255, 255, 0.78);
 
-  /* Rolling-ball spring easing — slight overshoot, natural settle */
-  --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Motion easings — matched to Framer Motion lib/animations.ts */
+  --ease-spring: cubic-bezier(0.34, 1.28, 0.64, 1);   /* slight overshoot, Apple-feel */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);          /* iOS standard deceleration */
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);         /* Material balanced */
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);       /* Material Design 3 Emphasized */
 
   /* Layout */
   --page-gutter: clamp(20px, 5vw, 80px);
@@ -228,14 +229,18 @@ body {
 }
 
 /* ─── Interactive spring — applied to hoverable elements ─── */
+/* Note: prefer Framer Motion variants for React components.    */
+/* Use this class only on raw HTML/non-Framer elements.         */
 .spring-hover {
-  transition: transform 350ms var(--ease-spring),
-              background 180ms var(--ease-out),
-              box-shadow 250ms var(--ease-out),
-              border-color 180ms var(--ease-out);
+  /* Layer 1: fast transform spring (50% faster than content transitions) */
+  transition:
+    transform 300ms var(--ease-spring),
+    background 200ms var(--ease-out),
+    box-shadow 250ms var(--ease-out),
+    border-color 150ms var(--ease-out);
 }
-.spring-hover:hover  { transform: translateY(-1px); }
-.spring-hover:active { transform: scale(0.97); transition-duration: 80ms; }
+.spring-hover:hover  { transform: translateY(-1.5px) scale(1.01); }
+.spring-hover:active { transform: scale(0.97);  transition-duration: 60ms; }
 
 /* ─── Skeleton ───────────────────────────────────────────── */
 @keyframes shimmer {
@@ -250,7 +255,7 @@ body {
     var(--bg-card-hover) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.8s ease-in-out infinite;
+  animation: shimmer 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   border-radius: 6px;
 }
 

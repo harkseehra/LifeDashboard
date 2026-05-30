@@ -12,7 +12,7 @@ import { addTask, completeTask } from "@/lib/tasks";
 import { addAppointment } from "@/lib/appointments";
 import { addGoal } from "@/lib/goals";
 import { loadTaskEmojis, saveTaskEmoji } from "@/lib/task-emojis";
-import { fadeUp, staggerParent, spring } from "@/lib/animations";
+import { fadeUp, staggerParent, spring, springSnap } from "@/lib/animations";
 import type { Task, Appointment } from "@/lib/types";
 
 interface DashboardLayoutProps {
@@ -130,33 +130,40 @@ export function DashboardLayout({ initialTasks, initialAppointments, goals }: Da
         initial="hidden"
         animate="visible"
       >
-        <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-1">
+        <motion.div variants={fadeUp} transition={spring} className="flex items-center gap-1.5">
           {[
-            { href: "/goals", label: "Goals" },
+            { href: "/goals",     label: "Goals" },
             { href: "/purchases", label: "Purchases" },
-            { href: "/wishlist", label: "Wishlist" },
+            { href: "/wishlist",  label: "Wishlist" },
           ].map(({ href, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className="type-small px-3 py-1.5 rounded-full transition-all duration-150"
-              style={{
-                color: "var(--text-secondary)",
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-card)",
-                textDecoration: "none",
-                fontWeight: 500,
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card-hover)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background = "var(--bg-card)";
-                (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-secondary)";
-              }}
-            >
-              {label}
+            <Link key={href} href={href} passHref legacyBehavior>
+              <motion.a
+                className="type-small"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  height: 30,
+                  padding: "0 12px",
+                  borderRadius: 20,
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border-card)",
+                  boxShadow: "var(--shadow-card)",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+                initial="rest"
+                whileHover="hover"
+                whileTap="tap"
+                variants={{
+                  rest:  { scale: 1, y: 0, color: "var(--text-secondary)" },
+                  hover: { scale: 1.03, y: -1.5, color: "var(--text-primary)" },
+                  tap:   { scale: 0.95, y: 0,    color: "var(--text-secondary)" },
+                }}
+                transition={springSnap}
+              >
+                {label}
+              </motion.a>
             </Link>
           ))}
         </motion.div>
