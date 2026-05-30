@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Trash2, Send, Plus, Sparkles } from "lucide-react";
+import { Trash2, Send, Sparkles } from "lucide-react";
 import { fadeUp, staggerParent, spring, micro } from "@/lib/animations";
 import { Emoji } from "@/components/ui/Emoji";
 
